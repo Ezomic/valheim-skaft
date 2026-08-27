@@ -1,42 +1,103 @@
 # Skaft
 
-One sentence saying what the mod does, in a player's words.
+Repairing with the hammer also repairs what is around it, and how far that reaches is your
+Crafting skill.
 
-Then the *why*. This file explains the design argument, not the settings - the settings
-explain themselves in the config file, and repeating them here is two places to get out of
-step. Say what problem this exists to solve, what the obvious alternative was, and why it
-was rejected. That paragraph is the reason a stranger installs it and the reason future-you
-does not undo it.
+*Skaft* is the Old Norse word for the shaft of a tool, the part you hold. The shaft is what
+decides how far the head reaches, and it is the part that wears out in your hand.
+
+## Why
+
+Area repair is one of the most installed things in Valheim and the reason is fair: walking a
+longhouse wall by wall after a troll has been through it is tedious rather than interesting.
+The problem with the versions on offer is not the radius. It is that the radius is a config
+entry. You install the mod, you type a number, and maintenance is over for the rest of the
+save.
+
+This one hands out the same convenience and makes it something the character earned. A fresh
+character gets vanilla repair, one piece per swing, and cannot tell the mod is installed. The
+reach opens as Crafting rises, and it is worth having by the time the base is worth defending.
+
+It also never makes repairing free. Every piece the sweep touches is charged exactly the
+stamina, eitr and hammer wear that repairing it by hand would have cost. So there are two
+limits doing two different jobs: the skill decides how far you can reach, and your stamina bar
+decides how much of that you can afford in one swing. A wide reach on an empty bar fixes
+nothing.
+
+The obvious alternative was to scale the *cost* down as the skill rises instead. It was
+rejected for the same reason as the config number: it ends at maintenance being free, and a
+mod that deletes a system is a different mod from one that makes it quicker.
+
+## Using it
+
+Take out the hammer, pick Repair, and hit something broken. Everything within reach that is
+also damaged gets repaired, nearest first, until your stamina or your hammer runs out.
+
+The count appears in the usual corner message, as `Repaired Wood wall x13`. That number is the
+only readout worth having, because it answers the question you actually asked.
+
+Your current reach is written on the Repair entry in the build menu, in metres, beside the
+Crafting level it came from.
+
+**Point at something broken.** The sweep only runs when the piece under your cursor was itself
+repaired by the swing. Hovering an intact wall next to a damaged one does nothing, and a second
+click within a second does nothing, because the game holds each piece on a one second repair
+cooldown of its own.
+
+That rule is not a limitation that got left in. It is what lets the mod inherit every check the
+game already makes on a repair: build mode, the crafting station a piece needs, wards, and
+whatever a future update adds. The alternative was to copy those checks into the mod and
+maintain the copies.
+
+## What it does not do
+
+It does not train Crafting. Repairing a building has never given skill in this game, and adding
+it would mean the reward feeding the skill that grants it. Crafting is earned at the bench and
+spent at the wall.
+
+It does not repair anything the hammer could not repair by hand. Other people's buildings, yes,
+exactly as vanilla does, and wards are the permission system in both cases. Things that are not
+build pieces, no.
+
+It does not break your hammer. The sweep stops one point of durability short rather than
+driving a tool past zero mid swing, which would unequip it and drop you out of build mode
+with no message.
 
 ## Installing
 
-Needs BepInEx. Nothing else. Through a mod manager it is one install. By hand, put
-`Skaft.dll` in `BepInEx/plugins/Skaft/`.
+Needs BepInEx and nothing else. By hand, put `Skaft.dll` in `BepInEx/plugins/Skaft/`.
 
-Then start the game once and quit. That first run writes the config file. It does not exist
-before the mod has loaded, which is the usual reason people think it is broken.
+Start the game once and quit if you want the config file to edit. It does not exist until the
+mod has loaded once, which is the usual reason people think a setting is missing.
 
 ## Settings
 
-The file is `BepInEx/config/ezomic.valheim.skaft.cfg`. Open it in any text editor. Every
-setting has a comment above it, so the file explains itself.
+The file is `BepInEx/config/ezomic.valheim.skaft.cfg`. Every setting has a comment above it,
+so the file explains itself. The two worth knowing about are `FullLevel`, the Crafting level
+where the reach stops growing, and `CostMultiplier`, which is the price per piece and is set to
+match vanilla exactly.
 
-Note that changing a default in a new version does nothing on a machine that has already run
-the mod. BepInEx writes every entry on first run and the saved value wins.
+Changing a default in a new version does nothing on a machine that has already run the mod.
+BepInEx writes every entry on first run and the saved value wins.
 
 ## Multiplayer
 
-Say plainly which of the three this is, because it is the question people actually ask:
+**The host needs it.** Clients without it are let in and are unaffected, because they simply
+repair one piece at a swing. Nothing this mod does leaves the machine except the repair message
+the game would have sent anyway, and there is no prefab, no item change and no saved value of
+its own, so a world built with Skaft is an ordinary world.
 
-- **Everyone needs it.** The server refuses a client that does not have it, at the same
-  build. Anything that registers a prefab or changes item data is this.
-- **The host needs it.** Clients without it are let in and are unaffected.
-- **Nobody else needs it.** Purely local, purely visual.
+If [Core](https://github.com/Ezomic/valheim-core) is installed, the host's curve applies to
+everyone connected, in memory only, and your own config file comes back the moment you
+disconnect. That is the half of it worth having on a server: without it, the reach is an
+agreement between players rather than a property of the world, and anyone can set their own
+radius to a hundred.
 
-If [Core](https://github.com/Ezomic/valheim-core) is installed, this mod registers with its
-version gate and the host's settings apply to everyone connected to it, in memory only -
-your own config file is never written to and comes back the moment you disconnect. Keybinds
-stay yours. Without Core the mod still runs; what is lost is the enforcement.
+Nothing about this can be enforced server side, and it is worth being honest about why. The
+game's repair message carries no permission check at all, and the server forwards it without
+looking at who sent it, so any client has always been able to repair anything loaded. Checking
+a radius on the server would mean inventing a second protocol to constrain something that was
+never constrained.
 
 ## Licence
 

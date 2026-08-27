@@ -1,65 +1,142 @@
 using HarmonyLib;
+using UnityEngine;
 
 namespace Skaft
 {
     /// <summary>
-    /// The mod's Harmony patches. One class named in the plugin's PatchAll, so nothing goes
-    /// live by being written.
+    /// Two postfixes. No prefix, no transpiler, no second entry point.
     ///
-    /// Two rules that this file exists to hold in view.
-    ///
-    /// Ride vanilla systems rather than hand-rolling them. The suite's mods do their work by
-    /// reading the game's own tables - Smelter.m_conversion, the Hammer's piece table - and
-    /// by going through Player.PlacePiece so validity stays the game's problem. Keeping new
-    /// features on that seam is what makes them survive a game update; a custom subclass or
-    /// a patch on movement trades that away.
-    ///
-    /// Never guess an API. Read it, with
-    /// <c>ilspycmd -t &lt;Type&gt; -r "&lt;ManagedDir&gt;" "&lt;ManagedDir&gt;\assembly_valheim.dll"</c>,
-    /// or take the numbers off a devkit rip. A wrong method name is a Harmony patch that
-    /// throws once at load and then quietly never runs.
+    /// The design argument for both of them is the same one: ride vanilla rather than
+    /// re-deriving it. Player.Repair already checks build mode, resolves the hovered piece,
+    /// runs CheckCanRemovePiece and PrivateArea.CheckAccess on it, refuses a piece at full
+    /// health and honours WearNTear's one-second cooldown. A prefix that replaced the method
+    /// would own copies of all six, and would own them again after every game update. A
+    /// postfix that only asks "did that actually repair something" inherits the lot, including
+    /// whatever guard a future update adds.
     /// </summary>
     internal static class SkaftPatches
     {
         /// <summary>
-        /// A patch that does nothing, kept so the wiring is proved rather than assumed. It
-        /// is the first thing to check when a mod loads and appears to do nothing at all: if
-        /// this line is absent from the log, the problem is the patch not applying, not the
-        /// logic behind it.
+        /// The mod, in one method: after vanilla repairs the piece under your cursor, repair
+        /// everything else within reach of it and charge for each one.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
-        private static void OnSpawned(Player __instance)
+        [HarmonyPatch(typeof(Player), "Repair", new[] { typeof(ItemDrop.ItemData), typeof(Piece) })]
+        private static void Repair(Player __instance, ItemDrop.ItemData toolItem)
         {
-            // Every player object in the scene runs this, not only yours. Anything meant for
-            // the person at the keyboard needs this line.
-            if (__instance != Player.m_localPlayer) return;
-            if (!SkaftConfig.Enabled.Value || !SkaftConfig.Verbose.Value) return;
+            if (!SkaftConfig.Enabled.Value) return;
 
-            SkaftPlugin.Log.LogInfo("Player spawned - patches are live.");
+            // Every player object in the scene runs the patched method, not only yours.
+            if (__instance == null || __instance != Player.m_localPlayer) return;
+            if (toolItem == null) return;
+
+            // The argument is not the target. Player.Repair ignores its repairPiece parameter
+            // entirely - that is the build menu's repair entry, not the thing being hit - and
+            // reads GetHoveringPiece() itself. Passing the argument through here would sweep
+            // around a UI element at the origin.
+            Piece hovered = __instance.GetHoveringPiece();
+            if (hovered == null) return;
+
+            if (!hovered.TryGetComponent(out WearNTear hoveredWear)) return;
+
+            // The gate, and the whole reason this is a postfix. m_lastRepair is stamped only on
+            // WearNTear.Repair()'s success path, so this is true exactly when vanilla just did
+            // the work - which means every guard vanilla ran has already passed.
+            //
+            // The consequence is worth saying out loud, because it will be reported as a bug:
+            // the sweep runs only when the piece under the cursor was itself damaged and off
+            // its own one-second cooldown. Hovering an intact wall beside a broken one does
+            // nothing, and a second click inside one second does nothing. Point at something
+            // broken. That is the trigger rule, and it buys the correctness above.
+            //
+            // It also makes this mod inert wherever another patch skips the original - Vaettir's
+            // Transplant prefixes this same method and returns false for the cultivator's own
+            // tool piece. Postfixes still run after a skipping prefix, but m_lastRepair never
+            // moved, so nothing sweeps. That is why there is no config listing which tools may
+            // sweep: the gate answers it for free.
+            if (!Sweep.JustRepaired(hoveredWear)) return;
+
+            Sweep.Run(__instance, toolItem, hovered, hoveredWear);
         }
 
-        // Traps worth having in front of you while writing the real ones. All of these were
-        // paid for once already:
-        //
-        //   Character.OnDeath runs on the OWNING CLIENT ONLY. Its own !IsOwner() early
-        //   return is dead code, so the block above it looks like it runs everywhere and
-        //   does not. Anything per-player at a kill has to be done by the owner for
-        //   everybody, e.g. through Player.GetPlayersInRange.
-        //
-        //   SEMan.Internal_AddStatusEffect refreshes an already-running effect in place and
-        //   returns without reaching the public AddStatusEffect overload. Patching only the
-        //   public one misses every refresh.
-        //
-        //   Player.ConsumeItem removes the item whatever EatFood returned. Refuse food in
-        //   CanConsumeItem, which is the gate that path respects; refusing later destroys it.
-        //
-        //   The first ObjectDB.Awake of a session fires against a stub with no items. Gate
-        //   anything that reads the item database on m_items.Count > 0, and hook
-        //   ObjectDB.CopyOtherDB as well - that is the path a client takes on joining a
-        //   server.
-        //
-        //   Writing to a container or ZDO you do not own is silently discarded. Call
-        //   nview.ClaimOwnership() first, which is what vanilla's Take All does.
+        /// <summary>How long between reach-line refreshes, in seconds.</summary>
+        private const float ReachInterval = 1f;
+
+        private static float _nextReach;
+        private static Piece _described;
+        private static string _originalDescription;
+        private static string _writtenDescription;
+
+        /// <summary>
+        /// Puts the current reach on the Repair entry in the build menu.
+        ///
+        /// No keybind, no window, no ring. The build menu is where a player already looks to
+        /// find out what a build-menu entry does, Hud.SetupPieceInfo re-reads m_description and
+        /// re-localizes it every time the panel updates, and the line therefore corrects itself
+        /// across a world reload without any state of ours surviving.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Player), "UpdatePlacement", new[] { typeof(bool), typeof(float) })]
+        private static void UpdatePlacement(Player __instance)
+        {
+            if (!SkaftConfig.Enabled.Value || !SkaftConfig.ShowReachInBuildMenu.Value) return;
+            if (__instance == null || __instance != Player.m_localPlayer) return;
+            if (!__instance.InPlaceMode()) return;
+
+            if (Time.time < _nextReach) return;
+            _nextReach = Time.time + ReachInterval;
+
+            Piece selected = __instance.GetSelectedPiece();
+
+            // Selection moved off the repair entry, or out of build mode entirely. Put the
+            // description we found back before touching anything else.
+            if (selected != _described) Restore();
+            if (selected == null || !selected.m_repairPiece) return;
+
+            if (_described == null)
+            {
+                _described = selected;
+                _originalDescription = selected.m_description;
+            }
+
+            // Somebody else - another mod, or a language change - has written to the field since
+            // we last did. Treat what is there now as the original rather than stacking on it.
+            if (selected.m_description != _writtenDescription && selected.m_description != null
+                && selected.m_description != _originalDescription)
+            {
+                _originalDescription = selected.m_description;
+            }
+
+            string line = "Reach: " + Sweep.Radius(__instance).ToString("0.0") + "m (Crafting "
+                          + Sweep.Level(__instance) + ")";
+
+            // Set, never append. This runs once a second for as long as the entry is selected,
+            // and appending would grow the description until it filled the panel.
+            _writtenDescription = string.IsNullOrEmpty(_originalDescription)
+                ? line
+                : _originalDescription + "\n" + line;
+
+            selected.m_description = _writtenDescription;
+        }
+
+        /// <summary>
+        /// Hand the repair entry its own description back.
+        ///
+        /// m_description is a field on the shared prefab, so this is the client's in-memory copy
+        /// for the session - no ZDO, nothing another player sees. It still has to be undone,
+        /// because leaving a stale reach on an entry nobody is looking at is a small lie, and
+        /// because the mod being disabled at runtime should look like the mod being absent.
+        /// </summary>
+        internal static void Restore()
+        {
+            if (_described != null && _described.m_description == _writtenDescription)
+            {
+                _described.m_description = _originalDescription;
+            }
+
+            _described = null;
+            _originalDescription = null;
+            _writtenDescription = null;
+        }
     }
 }
