@@ -1,0 +1,10 @@
+{
+    "name":  "Skaft",
+    "author":  "Robbin Thijssen",
+    "version_number":  "0.1.0",
+    "description":  "Hammer repair reaches further the higher your Crafting skill.",
+    "dependencies":  [
+                         "denikson-BepInExPack_Valheim-5.4.2333"
+                     ],
+    "website_url":  "https://github.com/Ezomic/valheim-skaft"
+}
