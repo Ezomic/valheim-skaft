@@ -79,19 +79,40 @@ namespace Skaft
         [HarmonyPatch(typeof(Player), "UpdatePlacement", new[] { typeof(bool), typeof(float) })]
         private static void UpdatePlacement(Player __instance)
         {
-            if (!SkaftConfig.Enabled.Value || !SkaftConfig.ShowReachInBuildMenu.Value) return;
             if (__instance == null || __instance != Player.m_localPlayer) return;
-            if (!__instance.InPlaceMode()) return;
+
+            // The selection read and the undo sit above every other guard on purpose. Restore()
+            // is the only thing that takes our line back off the prefab, so anything returning
+            // ahead of it freezes a stale reach on an entry nothing is updating any more. That
+            // is not hypothetical: Core writes a host's Enabled straight into the entry while
+            // the game is running, and the config manager does the same, so "the flag cannot
+            // change mid-session" is exactly the assumption that leaves the line stuck.
+            //
+            // Reading the selection every frame rather than once a second is two list lookups.
+            // GetSelectedPiece is null-safe on the same field InPlaceMode() tests - it IS
+            // m_buildPieces != null - so putting the hammer away arrives here as a null
+            // selection and restores, instead of returning early and leaving the write behind.
+            Piece selected = __instance.GetSelectedPiece();
+            if (selected != _described) Restore();
+
+            if (!SkaftConfig.Enabled.Value || !SkaftConfig.ShowReachInBuildMenu.Value)
+            {
+                Restore();
+                return;
+            }
+
+            if (selected == null || !selected.m_repairPiece) return;
+
+            // m_repairPiece does not mean "the hammer's Repair button". It means "this entry
+            // clicks on the world instead of placing into it", and other mods hang their own
+            // tools off it - Vaettir's Transplant entry on the cultivator wears it. The sweep
+            // provably cannot run there: Transplant's prefix skips vanilla's Repair, so
+            // m_lastRepair never moves and the gate above is never satisfied. Writing a reach on
+            // it would advertise a number that describes nothing.
+            if (!SkaftConfig.IsReachEntry(Utils.GetPrefabName(selected.gameObject.name))) return;
 
             if (Time.time < _nextReach) return;
             _nextReach = Time.time + ReachInterval;
-
-            Piece selected = __instance.GetSelectedPiece();
-
-            // Selection moved off the repair entry, or out of build mode entirely. Put the
-            // description we found back before touching anything else.
-            if (selected != _described) Restore();
-            if (selected == null || !selected.m_repairPiece) return;
 
             if (_described == null)
             {

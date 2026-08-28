@@ -28,9 +28,10 @@ stamina bar says how much of it you can afford.
 It will not train Crafting, because repairing a building never has, and a reward that feeds
 the skill granting it is a loop rather than a design.
 
-It will not break your hammer inside a sweep. A tool driven past zero durability is unequipped
-on the next frame, which drops you out of build mode with no message at all and reads as the
-hammer vanishing from your hand.
+It will not break your hammer inside a sweep. Repairing subtracts durability without checking
+zero, so a wide sweep can spend a whole hammer on one press. The game does tell you it broke,
+but it also unequips it, and being dropped out of build mode by a single click is a different
+thing from wearing a tool down over the swings that did it.
 
 It will not fire the build effect, the swing animation or a message per piece. One swing
 already fired all three for the piece under the cursor; forty more of each in the same frame is

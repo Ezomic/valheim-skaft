@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using BepInEx.Configuration;
 
 namespace Skaft
@@ -28,8 +30,36 @@ namespace Skaft
 
         public static ConfigEntry<bool> OwnBuildingsOnly;
         public static ConfigEntry<bool> ShowReachInBuildMenu;
+        public static ConfigEntry<string> ReachEntries;
 
         public static ConfigEntry<bool> Verbose;
+
+        private static string _reachRaw;
+        private static HashSet<string> _reachSet;
+
+        /// <summary>
+        /// Whether the build menu entry with this prefab name is one the sweep can actually
+        /// serve, and so one the reach line belongs on. Parsed on demand and re-parsed only when
+        /// the string changes, because a host push or the config manager can rewrite it live.
+        /// </summary>
+        internal static bool IsReachEntry(string prefabName)
+        {
+            string raw = ReachEntries.Value ?? string.Empty;
+
+            if (raw != _reachRaw || _reachSet == null)
+            {
+                _reachRaw = raw;
+                _reachSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (string part in raw.Split(','))
+                {
+                    string trimmed = part.Trim();
+                    if (trimmed.Length > 0) _reachSet.Add(trimmed);
+                }
+            }
+
+            return _reachSet.Contains(prefabName);
+        }
 
         public static void Bind(ConfigFile config)
         {
@@ -81,11 +111,12 @@ namespace Skaft
                 + "full health cost nothing either way.");
 
             DurabilityFloor = config.Bind("Skaft", "DurabilityFloor", 1f,
-                "The sweep stops before the hammer would drop to or below this. It is not "
-                + "politeness: a tool driven past zero is unequipped on the next frame, which "
-                + "throws you out of build mode with no message and looks like the hammer "
-                + "vanishing from your hand. Zero lets a sweep spend the hammer to its last "
-                + "point and break it on the following swing, the normal way.");
+                "The sweep stops before the hammer would drop to or below this. Repairing "
+                + "subtracts durability without checking zero, so a wide sweep can spend an "
+                + "entire hammer inside one click - the game tells you it broke, but it broke on "
+                + "a single press rather than over the swings that wore it down, and it "
+                + "unequips, which drops you out of build mode mid-job. Zero lets a sweep spend "
+                + "the hammer to its last point and break it on the next swing, the normal way.");
 
             MaxPieces = config.Bind("Skaft", "MaxPieces", 200,
                 "Hard ceiling on pieces repaired in one swing, whatever the radius says. This "
@@ -105,6 +136,15 @@ namespace Skaft
                 + "metres and the Crafting level it came from. This is the only place the "
                 + "number is shown; after a swing, the \"Repaired x12\" count tells you the "
                 + "rest.");
+
+            ReachEntries = config.Bind("Skaft", "ReachEntries", "piece_repair",
+                "Comma separated prefab names of the build menu entries the reach line is "
+                + "written on. It is not simply \"whatever is flagged as a repair entry\", "
+                + "because that flag means \"this entry clicks on the world instead of placing "
+                + "into it\" and other mods use it for their own tools - Vaettir's Transplant "
+                + "entry on the cultivator wears it, and the sweep can never run there. Add a "
+                + "name here if some other mod's repair entry does fall through to the game's "
+                + "own repair; the sweep itself is unaffected either way.");
 
             // Not synced by intent - see the plugin. A diagnostic flag is personal, and a host
             // turning on someone else's logging is not a thing anybody asked for.

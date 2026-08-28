@@ -52,10 +52,11 @@ namespace Skaft
         /// <summary>
         /// Reach in metres for this player right now, measured from the piece under the cursor.
         ///
-        /// GetSkillFactor is Clamp01(Mathf.Floor(level) / 100f), so multiplying it back up gives
-        /// an integral 0..100 that is already clamped at both ends. GetSkillLevel on its own is
-        /// not: status effects modify it after the floor, so a skill-raising food would push the
-        /// radius past MaxRadius and a debuff would push it negative.
+        /// GetSkillLevel applies the status-effect modifier to the raw level and only then
+        /// floors it, so it is always an integer but is bounded at neither end - a skill-raising
+        /// food pushes it above 100 and a debuff below 0. GetSkillFactor is that same number
+        /// over 100, Clamp01'd, so multiplying it back up is the integral 0..100 this wants and
+        /// the reason a food cannot push the radius past MaxRadius.
         ///
         /// Read per swing, never cached. Dying costs a quarter of the level and wipes the
         /// accumulator, so this number moves down mid-session as well as up.
@@ -98,6 +99,13 @@ namespace Skaft
                 if (wear == null || wear == hoveredWear) continue;
                 if ((wear.transform.position - _center).sqrMagnitude > radiusSqr) continue;
 
+                // Cheapest and most selective test there is, so it belongs here rather than
+                // after the sort and four component lookups. On a base that is standing, nearly
+                // everything in radius is intact, and this keeps the sort and every per-piece
+                // scan down to the pieces a swing could actually do something to. It is a cache
+                // rather than the authority, so the real check stays in the repair loop as well.
+                if (wear.GetHealthPercentage() >= 1f) continue;
+
                 Candidates.Add(wear);
             }
 
@@ -123,11 +131,14 @@ namespace Skaft
                 // key, and the sweep either stops early or runs on an empty bar.
                 if (!player.HaveStamina(stamina * Game.m_staminaRate)) { stopped = "stamina"; break; }
 
-                // Repair subtracts durability with no clamp and no zero check. A long sweep
-                // drives it arbitrarily negative in one frame, Humanoid.UpdateEquipment unequips
-                // the hammer on the next one, and that drops the player out of build mode with
-                // no message at all - which reads as the hammer vanishing from their hand. The
-                // sweep never breaks a tool; ordinary swinging still breaks it when it should.
+                // Repair subtracts durability with no clamp and no zero check, so a wide sweep
+                // can spend a whole hammer inside one frame. The break itself is not silent -
+                // Humanoid.DrainEquipedItemDurability messages "$msg_broke" with the item icon
+                // on the next FixedUpdate, because UpdateEquipment calls it for any right-hand
+                // item with m_useDurability whatever its passive drain is - but it also unequips,
+                // and being dropped out of build mode by one press is a different event from
+                // wearing a tool down over the swings that did it. The sweep never breaks a
+                // tool; ordinary swinging still breaks it when it should.
                 if (tool.m_shared.m_useDurability
                     && tool.m_durability - drain <= SkaftConfig.DurabilityFloor.Value)
                 {
@@ -158,7 +169,13 @@ namespace Skaft
                 // is private, and it writes "$msg_missingstation" centre-screen with no rate
                 // limit, so calling it per piece turns one missing workbench into a wall of
                 // messages. Vanilla already ran it once, for the hovered piece.
-                if (piece.m_craftingStation != null
+                //
+                // NoCostCheat() first, because that is the term vanilla short-circuits on and
+                // dropping it makes the sweep stricter than the swing that started it: under
+                // nocost the hovered wall repairs and every station-gated wall beside it would
+                // silently refuse, which reads as the mod being broken by a debug command.
+                if (!player.NoCostCheat()
+                    && piece.m_craftingStation != null
                     && CraftingStation.HaveBuildStationInRange(
                            piece.m_craftingStation.m_name, player.transform.position) == null
                     && !(ZoneSystem.instance != null
@@ -200,8 +217,8 @@ namespace Skaft
             {
                 SkaftPlugin.Log.LogInfo(
                     "Sweep: crafting " + Level(player) + ", radius " + radius.ToString("0.0")
-                    + "m, " + Candidates.Count + " in range, " + repaired + " repaired, stopped on "
-                    + stopped + ".");
+                    + "m, " + Candidates.Count + " damaged in range, " + repaired
+                    + " repaired, stopped on " + stopped + ".");
             }
 
             Candidates.Clear();

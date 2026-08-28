@@ -134,8 +134,8 @@ namespace Skaft
             Suite.Register(PluginGuid, PluginName, PluginVersion, Config, Requirement.HostOnly);
 
             // Registering already absorbs the whole config file, so naming these is a formality.
-            // It is worth writing anyway: these five are the mod's balance, and saying out loud
-            // that the host owns them is the point of putting Skaft on a server at all.
+            // It is worth writing anyway: these are the mod's balance, plus the kill switch, and
+            // saying out loud that the host owns them is the point of putting Skaft on a server.
             Suite.Sync(SkaftConfig.Enabled, SkaftConfig.MinRadius, SkaftConfig.MaxRadius,
                        SkaftConfig.FullLevel, SkaftConfig.Curve, SkaftConfig.CostMultiplier);
 

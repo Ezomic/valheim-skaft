@@ -59,9 +59,9 @@ It does not repair anything the hammer could not repair by hand. Other people's 
 exactly as vanilla does, and wards are the permission system in both cases. Things that are not
 build pieces, no.
 
-It does not break your hammer. The sweep stops one point of durability short rather than
-driving a tool past zero mid swing, which would unequip it and drop you out of build mode
-with no message.
+It does not break your hammer. Repairing subtracts durability without checking zero, so a wide
+sweep could spend a whole hammer on one press and unequip it mid job. The sweep stops a point
+short instead, and ordinary swinging still wears the hammer out the normal way.
 
 ## Installing
 
