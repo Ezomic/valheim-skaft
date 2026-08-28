@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 
@@ -63,6 +64,10 @@ namespace Skaft
         private const float ReachInterval = 1f;
 
         private static float _nextReach;
+
+        /// <summary>Repair entries already named in the log, so each is reported once.</summary>
+        private static readonly HashSet<string> _unknownEntries = new HashSet<string>();
+
         private static Piece _described;
         private static string _originalDescription;
         private static string _writtenDescription;
@@ -109,7 +114,25 @@ namespace Skaft
             // provably cannot run there: Transplant's prefix skips vanilla's Repair, so
             // m_lastRepair never moves and the gate above is never satisfied. Writing a reach on
             // it would advertise a number that describes nothing.
-            if (!SkaftConfig.IsReachEntry(Utils.GetPrefabName(selected.gameObject.name))) return;
+            string entry = Utils.GetPrefabName(selected.gameObject.name);
+            if (!SkaftConfig.IsReachEntry(entry))
+            {
+                // Names it once, because ReachEntries defaults to a name that cannot be checked
+                // any other way: piece_repair is not registered in ZNetScene or ObjectDB, so a
+                // Devkit rip cannot resolve it and nothing in the decompiled assembly carries it
+                // either. If the default is wrong the reach line silently never appears, which is
+                // indistinguishable from the feature being off - so the log says what was
+                // actually selected and the fix is one config edit.
+                if (SkaftConfig.Verbose.Value && _unknownEntries.Add(entry))
+                {
+                    SkaftPlugin.Log.LogInfo(
+                        "Repair entry '" + entry + "' is not in ReachEntries, so no reach line is "
+                        + "written on it. That is correct for another mod's tool; add the name if "
+                        + "it is a repair entry the sweep can actually serve.");
+                }
+
+                return;
+            }
 
             if (Time.time < _nextReach) return;
             _nextReach = Time.time + ReachInterval;

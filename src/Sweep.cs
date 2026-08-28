@@ -45,9 +45,13 @@ namespace Skaft
         // as unrelated vanilla features breaking rather than as this mod failing. Bound here, a
         // bad binding costs the sweep and nothing else.
         private static AccessTools.FieldRef<WearNTear, float> _lastRepair;
+        private static AccessTools.FieldRef<Player, PieceTable> _buildPieces;
         private static Func<Player, float> _buildStamina;
         private static bool _bound;
         private static bool _bindFailed;
+
+        /// <summary>One-shot, so the tool report is one line a session rather than one a swing.</summary>
+        private static bool _toolReported;
 
         /// <summary>
         /// Reach in metres for this player right now, measured from the piece under the cursor.
@@ -117,6 +121,8 @@ namespace Skaft
             float stamina = _buildStamina(player) * cost;
             float eitr = tool.m_shared.m_attack.m_attackEitr * cost;
             float drain = tool.m_shared.m_useDurabilityDrain * cost;
+
+            ReportTool(player, tool, stamina);
 
             int repaired = 0;
             string stopped = "radius";
@@ -238,6 +244,47 @@ namespace Skaft
         }
 
         /// <summary>
+        /// Writes the tool's real numbers to the log, once per session.
+        ///
+        /// These are all serialized asset data - they live in ItemDrop.m_itemData.m_shared and on
+        /// the tool's PieceTable prefab, neither of which is reachable from the decompiled
+        /// assembly, and neither of which a Devkit rip reports: the PieceTable is not registered
+        /// in ZNetScene or ObjectDB so it cannot be ripped by name, and the rip walks only simple
+        /// public fields on a root's components, so ItemDrop shows m_autoPickup and nothing else.
+        /// Asking the running game through the mod that uses the numbers is the honest route.
+        ///
+        /// The one that decides something is the piece table's skill. GetBuildStamina already
+        /// subtracts up to half the stamina at max skill in whatever skill that table names, so
+        /// if it names Crafting then Crafting is buying reach here AND a discount there, which is
+        /// a double reward this mod did not intend and CostMultiplier is the dial for.
+        /// </summary>
+        private static void ReportTool(Player player, ItemDrop.ItemData tool, float stamina)
+        {
+            if (_toolReported || !SkaftConfig.Verbose.Value) return;
+            _toolReported = true;
+
+            string skill = "unknown (m_buildPieces unreachable)";
+            if (_buildPieces != null)
+            {
+                PieceTable table = _buildPieces(player);
+                skill = table == null ? "no piece table" : table.m_skill.ToString();
+            }
+
+            SkaftPlugin.Log.LogInfo(
+                "Tool: " + tool.m_shared.m_name
+                + ", attackStamina " + tool.m_shared.m_attack.m_attackStamina
+                + ", attackEitr " + tool.m_shared.m_attack.m_attackEitr
+                + ", useDurability " + tool.m_shared.m_useDurability
+                + ", useDurabilityDrain " + tool.m_shared.m_useDurabilityDrain
+                + ", durability " + tool.m_durability.ToString("0.0")
+                + "/" + tool.GetMaxDurability().ToString("0.0")
+                + ". Charging " + stamina.ToString("0.00") + " stamina a piece."
+                + " Build table skill: " + skill
+                + " (if that is Crafting, it already discounts build stamina by up to half at"
+                + " level 100, on top of the reach this mod grants).");
+        }
+
+        /// <summary>
         /// Whether vanilla's own repair just succeeded on this piece, this frame.
         ///
         /// Player.Repair's success flag is a stack local with no field, out-param or event
@@ -271,6 +318,10 @@ namespace Skaft
                     AccessTools.Method(typeof(Player), "GetBuildStamina"));
 
                 if (_lastRepair == null || _buildStamina == null) throw new MissingMemberException();
+
+                // Diagnostics only, so a failure here must not cost the sweep. See ReportTool.
+                try { _buildPieces = AccessTools.FieldRefAccess<Player, PieceTable>("m_buildPieces"); }
+                catch { _buildPieces = null; }
             }
             catch (Exception e)
             {
