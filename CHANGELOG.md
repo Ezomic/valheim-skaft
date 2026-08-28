@@ -19,9 +19,15 @@ mod behind a wall.
 ### The price
 
 Each piece the sweep repairs is charged the stamina, eitr and hammer durability that repairing
-it by hand would have cost. Nothing is discounted, including by skill. That is the difference
-between this and every other area repair: the radius says how far you may reach, and the
-stamina bar says how much of it you can afford.
+it by hand would have cost. That is the difference between this and every other area repair:
+the radius says how far you may reach, and the stamina bar says how much of it you can afford.
+
+Vanilla's own price does fall as Crafting rises, and that is kept. The Hammer's piece table
+names Crafting, so building and repairing already cost up to half as much stamina at high
+skill: measured in game, 5.00 a piece at Crafting 0, 3.50 at 60, 2.50 at 100. Cancelling that
+would mean writing a rule against a rule the game already has. It also means the levels above
+60 are not wasted once the radius stops growing, because they keep buying pieces per stamina
+bar instead of metres.
 
 ### What it will not do
 
@@ -48,6 +54,12 @@ all four and maintaining them through updates.
 The visible consequence is that hovering an intact wall beside a damaged one does nothing, and
 a second click within a second does nothing.
 
-### Untested
+### What has actually been run
 
-Written against the decompiled game and not yet run in game.
+The sweep works. At Crafting 55 the reach measured 7.5m, which is what the curve predicts, and
+one swing at a damaged wall repaired the two damaged walls beside it and left the intact ones
+alone. The radius, the trigger, the health filter and the charge are all confirmed in a live
+singleplayer world.
+
+Not yet exercised: wards, another player's pieces, running out of stamina or durability
+mid-sweep, and anything at all in multiplayer.

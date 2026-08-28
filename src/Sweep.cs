@@ -8,11 +8,23 @@ namespace Skaft
     /// <summary>
     /// The radius, and the sweep it drives.
     ///
-    /// The whole mod is one idea: the Crafting skill buys reach, and never a discount. Every
-    /// piece the sweep touches is charged exactly what vanilla charges to repair one piece by
-    /// hand, so the radius says how far you may reach and the stamina bar says how many you may
-    /// fix. That is what keeps a wide reach from being the same thing as free maintenance,
-    /// which is what every other area-repair mod ends up being.
+    /// The whole mod is one idea: the Crafting skill buys reach, and every piece the sweep
+    /// touches is charged exactly what vanilla charges to repair that piece by hand. The radius
+    /// says how far you may reach and the stamina bar says how many you may fix, which is what
+    /// keeps a wide reach from being the same thing as free maintenance - the thing every other
+    /// area-repair mod ends up being.
+    ///
+    /// An earlier version of this comment said the skill buys reach and "never a discount". That
+    /// was wrong, and the game said so: the Hammer's PieceTable names Crafting, so
+    /// GetBuildStamina already subtracts up to half the build stamina as that skill rises - 5.00
+    /// a piece at Crafting 0, 3.50 at 60, 2.50 at 100, measured in game. Crafting therefore buys
+    /// reach here and affordability there.
+    ///
+    /// That is kept rather than cancelled. Dividing vanilla's own discount back out would be
+    /// hand-rolling a counter-rule against a vanilla system, which is the one thing the suite's
+    /// design notes say not to do, and it turns out to fix the curve's weakest part: once the
+    /// radius caps at FullLevel the remaining levels are not dead, because vanilla keeps paying
+    /// in pieces-per-bar. The factor is bounded at two.
     ///
     /// Nothing here runs unless <see cref="SkaftPatches"/> has already established that vanilla
     /// itself just repaired the piece under the cursor. See the gate there - it is why this file
