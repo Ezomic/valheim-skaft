@@ -61,5 +61,11 @@ one swing at a damaged wall repaired the two damaged walls beside it and left th
 alone. The radius, the trigger, the health filter and the charge are all confirmed in a live
 singleplayer world.
 
+The two pieces of feedback are confirmed too, which matters because neither could be proved by
+reading code alone. The corner message reads `Repaired Wood wall x3` - one line rather than
+three, because the game sums the amounts of two matching messages queued within four seconds,
+so the count rides vanilla's own text and needs no new translation. And the Repair entry in the
+build menu carries its reach line.
+
 Not yet exercised: wards, another player's pieces, running out of stamina or durability
 mid-sweep, and anything at all in multiplayer.
