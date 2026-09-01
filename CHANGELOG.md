@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 - unreleased
+## 1.0.0 - 2 September 2026
 
 First version. Repairing with the hammer sweeps everything damaged within reach of the piece
 you hit, and the reach is your Crafting skill.
@@ -97,5 +97,6 @@ saved value beats any new default in code. So the curve, the radius pair and `Co
 shipped here are permanent for anybody who installs this version: retuning them later moves
 new installs and nobody else.
 
-That is worth saying out loud at 0.1.0 rather than discovering it at 0.2.0, because the numbers
-have been measured at exactly one point - 7.5m at Crafting 55 - and reasoned everywhere else.
+That is worth saying out loud in the first published version rather than discovering it in the
+second, because the numbers have been measured at exactly one point - 7.5m at Crafting 55 -
+and reasoned everywhere else.

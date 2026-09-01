@@ -7,7 +7,7 @@ schemaVersion = "0.0.1"
 [package]
 namespace = "Ezomic"
 name = "Skaft"
-versionNumber = "0.1.0"
+versionNumber = "1.0.0"
 description = "Hammer repair reaches further the higher your Crafting skill."
 websiteUrl = "https://github.com/Ezomic/valheim-skaft"
 containsNsfwContent = false
