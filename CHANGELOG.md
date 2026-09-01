@@ -59,7 +59,7 @@ a second click within a second does nothing.
 The sweep works. At Crafting 55 the reach measured 7.5m, which is what the curve predicts, and
 one swing at a damaged wall repaired the two damaged walls beside it and left the intact ones
 alone. The radius, the trigger, the health filter and the charge are all confirmed in a live
-singleplayer world.
+singleplayer world, on 28 August 2026.
 
 The two pieces of feedback are confirmed too, which matters because neither could be proved by
 reading code alone. The corner message reads `Repaired Wood wall x3` - one line rather than
@@ -68,4 +68,34 @@ so the count rides vanilla's own text and needs no new translation. And the Repa
 build menu carries its reach line.
 
 Not yet exercised: wards, another player's pieces, running out of stamina or durability
-mid-sweep, and anything at all in multiplayer.
+mid-sweep, and anything at all in multiplayer. Singleplayer is not a weaker version of a
+multiplayer test, it is a different one - there is no owner to hand a repair to and no gate to
+pass - so nothing above should be read as covering a server.
+
+### What a Core server does to this
+
+Skaft registers with Core's gate as `HostOnly`, and that word describes one direction only. A
+client *without* Skaft joining a server with it is let through, which is the whole reason the
+requirement is set that way: such a client is genuinely unaffected, it simply repairs one piece
+a swing.
+
+Going the other way, the gate refuses. The manifest each end sends does include the
+requirement, but the end reading it discards that field on purpose - its own view is what it
+enforces - so the check for mods present on the far end and absent here has nothing left to
+tell it that this one is allowed to be one-sided, and reports it as a mismatch. A server
+running Core without Skaft therefore turns away every client that has it, showing the game's
+own incompatible-version screen. On a Core server it is installed on the server too, or on
+nobody. A server with no Core has no gate and does not care.
+
+That is a Core matter rather than a Skaft one, and it is cheap to change if it should be: the
+field is already on the wire and only the comparison would move.
+
+### These defaults are the ones people keep
+
+BepInEx writes every bound entry to disk the first time the plugin loads, and from then on the
+saved value beats any new default in code. So the curve, the radius pair and `CostMultiplier`
+shipped here are permanent for anybody who installs this version: retuning them later moves
+new installs and nobody else.
+
+That is worth saying out loud at 0.1.0 rather than discovering it at 0.2.0, because the numbers
+have been measured at exactly one point - 7.5m at Crafting 55 - and reasoned everywhere else.

@@ -93,11 +93,42 @@ disconnect. That is the half of it worth having on a server: without it, the rea
 agreement between players rather than a property of the world, and anyone can set their own
 radius to a hundred.
 
+**On a Core server it goes on the server too, or on nobody.** Skaft registers with Core's gate
+as host-only, which is why a client *without* it is let in. The reverse does not follow, and
+the difference is worth knowing before you install this on a character that plays somewhere
+else. Each end sends the other its list of mods, and that list does carry the host-only mark -
+but the end reading it throws that field away and enforces its own view instead, so a mod on
+the far end and not on this one is a refused connection whatever it was marked as. A server
+that runs Core but not Skaft therefore turns away everyone who has it, with the game's stock
+incompatible-version screen. Servers without Core are unaffected, because there is no gate to
+refuse anything.
+
 Nothing about this can be enforced server side, and it is worth being honest about why. The
 game's repair message carries no permission check at all, and the server forwards it without
 looking at who sent it, so any client has always been able to repair anything loaded. Checking
 a radius on the server would mean inventing a second protocol to constrain something that was
 never constrained.
+
+## Known gaps
+
+- **Singleplayer is the only place this has ever run.** One live world, 28 August 2026: at
+  Crafting 55 the reach measured 7.5m, which is what the curve predicts, and one swing at a
+  damaged wall repaired the two damaged walls beside it and left the intact ones alone. The
+  radius, the trigger, the health filter and the per-piece charge are confirmed there and
+  nowhere else.
+- **No second player has ever seen it.** Not a dedicated server, not a guest, not another
+  player's building. The config sync and the version gate are Core's and are exercised by
+  other mods; the sweep itself has never been swung with anybody watching.
+- **Wards are untested.** The argument in *Using it* is that the sweep inherits every check
+  vanilla makes, wards included, because it only ever runs on a piece vanilla has just
+  repaired. That is a reason to expect it to be right, not a report of it being right.
+- **Running out mid-sweep is untested.** An empty stamina bar or a hammer arriving at
+  `DurabilityFloor` part-way through one swing stops the sweep by construction. Neither stop
+  has been watched happen.
+- **These defaults are the ones you keep.** BepInEx writes every setting to disk the first
+  time the mod loads and the saved value beats any later default in code, so retuning the
+  curve in a future version reaches nobody who already has this one. The numbers are reasoned
+  and measured at a single point on the curve; they have not been played from 0 to 60.
 
 ## Licence
 
