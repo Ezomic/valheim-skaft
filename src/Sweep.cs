@@ -197,7 +197,15 @@ namespace Skaft
                     && CraftingStation.HaveBuildStationInRange(
                            piece.m_craftingStation.m_name, player.transform.position) == null
                     && !(ZoneSystem.instance != null
-                         && ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoWorkbench)))
+                         // .ToString() rather than the enum overload: GetGlobalKey(GlobalKeys)
+                         // is m_globalKeysEnums.Contains(key), a lookup by NUMBER in the one
+                         // implicitly-numbered enum in this API, so a member inserted above
+                         // NoWorkbench silently re-points this at a different key. The name is
+                         // the stable identity - GetGlobalKey(string) matches on name.ToLower()
+                         // and vanilla's own two-argument enum overload spells it the same way.
+                         // Off the enum member rather than a literal, so a rename follows and a
+                         // removal fails to compile.
+                         && ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoWorkbench.ToString())))
                 {
                     continue;
                 }
