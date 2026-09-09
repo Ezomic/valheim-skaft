@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0 - 9 September 2026
+
+Rebuilt for Valheim 1.0. This version does not run on pre-1.0 Valheim, and the previous
+one does not run on 1.0.
+
+### Fixed
+
+- **Reads the right global key on Valheim 1.0.** `GlobalKeys` is the one implicitly numbered
+  enum in the game's API, and 1.0 inserted ten members - moving the no-workbench key from 22 to
+  27. A compiled ordinal therefore asked about a different key entirely, with nothing logged.
+  Read by name now, taken off the enum member so a rename follows automatically and a removal
+  is a build error rather than a quiet wrong answer.
+
+### Changed
+
+- **Joins the Longhouse pack.** Nothing here changed to allow that; Core was discarding the
+  requirement each mod declares, so a server without Skaft refused every client that had it.
+
 ## 1.0.0 - 2 September 2026
 
 First version. Repairing with the hammer sweeps everything damaged within reach of the piece
