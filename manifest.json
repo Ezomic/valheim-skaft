@@ -4,7 +4,7 @@
     "version_number":  "1.1.0",
     "description":  "Hammer repair reaches further the higher your Crafting skill.",
     "dependencies":  [
-                         "denikson-BepInExPack_Valheim-5.4.2333"
+                         "denikson-BepInExPack_Valheim-5.4.2350"
                      ],
     "website_url":  "https://github.com/Ezomic/valheim-skaft"
 }
