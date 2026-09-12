@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.1 - 12 September 2026
+
+### Changed
+
+- Rewritten README. Same mod, clearer documentation: what it does and how to install it come
+  first, then configuration, multiplayer behaviour, compatibility and troubleshooting. Every
+  config table was checked against the plugin's own Config.Bind calls, so the settings,
+  sections and defaults listed are the ones actually bound. No code changed in this release.
+
 ## 1.1.0 - 9 September 2026
 
 Rebuilt for Valheim 1.0. This version does not run on pre-1.0 Valheim, and the previous
