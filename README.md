@@ -1,135 +1,212 @@
 # Skaft
 
-Repairing with the hammer also repairs what is around it, and how far that reaches is your
-Crafting skill.
+Skaft turns hammer repair into an area repair, and the size of that area is your Crafting
+skill. Every piece the sweep fixes costs the same stamina, eitr and hammer durability that
+repairing it by hand would have cost, so the skill decides how far you reach and your stamina
+bar decides how much of that you can afford in one swing.
 
-*Skaft* is the Old Norse word for the shaft of a tool, the part you hold. The shaft is what
-decides how far the head reaches, and it is the part that wears out in your hand.
+*Skaft* is Old Norse for the shaft of a tool.
 
-## Why
+## Features
 
-Area repair is one of the most installed things in Valheim and the reason is fair: walking a
-longhouse wall by wall after a troll has been through it is tedious rather than interesting.
-The problem with the versions on offer is not the radius. It is that the radius is a config
-entry. You install the mod, you type a number, and maintenance is over for the rest of the
-save.
+- Repairing a damaged piece with the hammer also repairs the damaged pieces around it.
+- The radius comes from Crafting: nothing at level 0, about 2m at 10, 4m at 25, 7m at 50, and
+  8m from 60 upwards.
+- Each swept piece is charged the full vanilla per-piece repair cost. Nothing is free.
+- Pieces are repaired nearest first, so a swing that runs out of stamina has fixed the wall in
+  front of you.
+- The Repair entry in the build menu shows your current reach in metres and the Crafting level
+  it came from.
+- The result arrives in the usual corner message as `Repaired Wood wall x13`, using the game's
+  own text.
+- The sweep will not break your hammer inside one click; it stops a durability point short.
+- No new prefabs, items, recipes or saved values. A world played with Skaft is an ordinary
+  world, and removing the mod leaves nothing behind.
 
-This one hands out the same convenience and makes it something the character earned. A fresh
-character gets vanilla repair, one piece per swing, and cannot tell the mod is installed. The
-reach opens as Crafting rises, and it is worth having by the time the base is worth defending.
+## How the sweep works
 
-It also never makes repairing free. Every piece the sweep touches is charged exactly the
-stamina, eitr and hammer wear that repairing it by hand would have cost. So there are two
-limits doing two different jobs: the skill decides how far you can reach, and your stamina bar
-decides how much of that you can afford in one swing. A wide reach on an empty bar fixes
-nothing.
-
-The obvious alternative was to scale the *cost* down as the skill rises instead. It was
-rejected for the same reason as the config number: it ends at maintenance being free, and a
-mod that deletes a system is a different mod from one that makes it quicker.
-
-## Using it
-
-Take out the hammer, pick Repair, and hit something broken. Everything within reach that is
-also damaged gets repaired, nearest first, until your stamina or your hammer runs out.
-
-The count appears in the usual corner message, as `Repaired Wood wall x13`. That number is the
-only readout worth having, because it answers the question you actually asked.
-
-Your current reach is written on the Repair entry in the build menu, in metres, beside the
-Crafting level it came from.
+Take out the hammer, select Repair, and hit something damaged. Everything damaged within reach
+of that piece is repaired until your stamina or your hammer durability runs out.
 
 **Point at something broken.** The sweep only runs when the piece under your cursor was itself
-repaired by the swing. Hovering an intact wall next to a damaged one does nothing, and a second
-click within a second does nothing, because the game holds each piece on a one second repair
-cooldown of its own.
+repaired by that swing. Hovering an intact wall next to a damaged one does nothing, and a
+second click within a second does nothing, because vanilla holds each piece on a one second
+repair cooldown. Following vanilla's own success is how the mod inherits every check the game
+already makes: build mode, the crafting station a piece requires, ward access, and the
+full-health test.
 
-That rule is not a limitation that got left in. It is what lets the mod inherit every check the
-game already makes on a repair: build mode, the crafting station a piece needs, wards, and
-whatever a future update adds. The alternative was to copy those checks into the mod and
-maintain the copies.
+The radius is `MinRadius + (MaxRadius - MinRadius) * (level / FullLevel)^Curve`, read fresh on
+every swing. With the default numbers:
 
-## What it does not do
+| Crafting | Reach |
+| --- | --- |
+| 0 | none |
+| 10 | 1.9m |
+| 25 | 4.0m |
+| 50 | 6.9m |
+| 60 and above | 8.0m |
 
-It does not train Crafting. Repairing a building has never given skill in this game, and adding
-it would mean the reward feeding the skill that grants it. Crafting is earned at the bench and
-spent at the wall.
+FullLevel is 60 rather than 100 because Crafting 100 costs roughly 20,300 crafts and level 60
+about 5,700, and repairing buildings trains no skill at all. Crafting rises from crafting and
+upgrading at a station and from repairing worn items.
 
-It does not repair anything the hammer could not repair by hand. Other people's buildings, yes,
-exactly as vanilla does, and wards are the permission system in both cases. Things that are not
-build pieces, no.
+Vanilla already makes building and repairing cheaper as Crafting rises: the Hammer's piece
+table names the Crafting skill, so `GetBuildStamina` subtracts up to half the cost at max
+level. Measured in game that is 5.00 stamina a piece at Crafting 0, 3.50 at 60 and 2.50 at
+100. Skaft does not cancel that, which means the levels above 60 still pay you: the radius
+stops growing but each swing affords more pieces.
 
-It does not break your hammer. Repairing subtracts durability without checking zero, so a wide
-sweep could spend a whole hammer on one press and unequip it mid job. The sweep stops a point
-short instead, and ordinary swinging still wears the hammer out the normal way.
+### What it does not do
 
-## Installing
+- It does not train Crafting. Repairing a building has never given skill in this game.
+- It does not repair anything the hammer could not repair by hand. Other players' buildings
+  yes, exactly as vanilla does, with wards as the permission system in both cases. Objects
+  that are not build pieces, such as dvergr props and Ashlands altars, are skipped.
+- It does not fire the build effect, the swing animation or a corner message per piece. One
+  swing already fired those once for the piece under the cursor.
 
-Needs BepInEx and nothing else. By hand, put `Skaft.dll` in `BepInEx/plugins/Skaft/`.
+## Installation
 
-Start the game once and quit if you want the config file to edit. It does not exist until the
-mod has loaded once, which is the usual reason people think a setting is missing.
+Install through a mod manager from
+[Thunderstore](https://thunderstore.io/c/valheim/p/Ezomic/Skaft/), or by hand: put `Skaft.dll`
+in `BepInEx/plugins/Skaft/`.
 
-## Settings
+Requires [BepInEx 5.4.2350](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/).
+This is a BepInEx 5 plugin and does not work on BepInEx 6.
 
-The file is `BepInEx/config/ezomic.valheim.skaft.cfg`. Every setting has a comment above it,
-so the file explains itself. The two worth knowing about are `FullLevel`, the Crafting level
-where the reach stops growing, and `CostMultiplier`, which is the price per piece and is set to
-match vanilla exactly.
+[Longhouse Core](https://thunderstore.io/c/valheim/p/Ezomic/Longhouse_Core/) is an optional
+soft dependency. Skaft runs without it; see Multiplayer for what Core adds.
 
-Changing a default in a new version does nothing on a machine that has already run the mod.
-BepInEx writes every entry on first run and the saved value wins.
+The config file does not exist until the game has been started once with the mod installed.
+
+## Configuration
+
+The file is `BepInEx/config/ezomic.valheim.skaft.cfg`. Every entry has a comment above it
+explaining the number.
+
+### [Skaft]
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `Enabled` | `true` | Whether the sweep runs at all. Off leaves vanilla single-piece repair untouched. |
+| `MinRadius` | `0` | Reach in metres at Crafting 0. At zero the sweep does not run at all, so a new character gets plain vanilla repair. |
+| `MaxRadius` | `8` | Reach in metres once Crafting reaches `FullLevel`. At 8, a mid-wall swing covers a 10x6 longhouse end to end. |
+| `FullLevel` | `60` | The Crafting level at which the radius stops growing. |
+| `Curve` | `0.8` | Exponent on the skill fraction. 1.0 is a straight line, below 1 opens the reach earlier, above 1 saves it for the top levels. |
+| `CostMultiplier` | `1` | Multiplies the stamina, eitr and durability charged per swept piece. 1 is exactly what vanilla charges to repair that piece by hand. Pieces already at full health cost nothing either way. |
+| `DurabilityFloor` | `1` | The sweep stops before the hammer would drop to or below this. At 0 a sweep can spend the hammer to its last point, which unequips it and drops you out of build mode mid-job. |
+| `MaxPieces` | `200` | Hard ceiling on pieces repaired in one swing. This is a network guard, not a balance number: each repaired piece is one message out and one broadcast back. |
+| `OwnBuildingsOnly` | `false` | Restrict the sweep to pieces you placed. False matches vanilla, which repairs anyone's building and leaves permission to wards. The piece directly under your cursor is always vanilla's business, not this setting's. |
+| `ShowReachInBuildMenu` | `true` | Add the reach line to the Repair entry in the build menu. |
+| `ReachEntries` | `piece_repair` | Comma separated prefab names of the build menu entries the reach line is written on. Other mods hang their own click-on-the-world tools off the same flag, and the sweep can never run on those, so the line is only written on names listed here. |
+
+### [Diagnostics]
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `Verbose` | `false` | One line per swing to `BepInEx/LogOutput.log`: skill level, radius, candidates in range, pieces repaired, and what stopped the sweep. Also names any repair entry that is not in `ReachEntries`, and logs the hammer's real numbers once per session. |
+
+BepInEx writes every setting to disk the first time the mod loads, and from then on the saved
+value beats a new default in code. If a later version retunes the curve, machines that already
+have this one keep the old numbers unless the cfg line is edited or deleted.
 
 ## Multiplayer
 
-**The host needs it.** Clients without it are let in and are unaffected, because they simply
-repair one piece at a swing. Nothing this mod does leaves the machine except the repair message
-the game would have sent anyway, and there is no prefab, no item change and no saved value of
-its own, so a world built with Skaft is an ordinary world.
+Skaft works for whoever installs it. Every decision is made on the client swinging the hammer,
+from state that client already has, and the only thing that leaves the machine is the repair
+message vanilla would have sent anyway. Players without the mod are unaffected: they repair one
+piece per swing.
 
-If [Core](https://github.com/Ezomic/valheim-core) is installed, the host's curve applies to
-everyone connected, in memory only, and your own config file comes back the moment you
-disconnect. That is the half of it worth having on a server: without it, the reach is an
-agreement between players rather than a property of the world, and anyone can set their own
-radius to a hundred.
+None of this can be enforced by the server. `WearNTear.RPC_Repair` has no permission check and
+the server forwards it without inspecting the sender, so any client has always been able to
+repair any loaded piece. Checking a radius server-side would mean a second protocol for
+something that was never constrained in the first place.
 
-**On a Core server it goes on the server too, or on nobody.** Skaft registers with Core's gate
-as host-only, which is why a client *without* it is let in. The reverse does not follow, and
-the difference is worth knowing before you install this on a character that plays somewhere
-else. Each end sends the other its list of mods, and that list does carry the host-only mark -
-but the end reading it throws that field away and enforces its own view instead, so a mod on
-the far end and not on this one is a refused connection whatever it was marked as. A server
-that runs Core but not Skaft therefore turns away everyone who has it, with the game's stock
-incompatible-version screen. Servers without Core are unaffected, because there is no gate to
-refuse anything.
+With Longhouse Core installed on both ends, the host's settings are applied on connected
+clients in memory for as long as they are connected. The client's own config file is not
+written, and their values come back on disconnect. That is what makes the curve a property of
+the server rather than an agreement between players: without it, anyone can set `MaxRadius` to
+100 and `CostMultiplier` to 0 in their own file. `ShowReachInBuildMenu` and `Verbose` are
+exempt from the sync, since they are display and diagnostics rather than balance.
 
-Nothing about this can be enforced server side, and it is worth being honest about why. The
-game's repair message carries no permission check at all, and the server forwards it without
-looking at who sent it, so any client has always been able to repair anything loaded. Checking
-a radius on the server would mean inventing a second protocol to constrain something that was
-never constrained.
+Skaft registers with Core as host-only, so a client without Skaft can join a server that has
+it. From Core 1.2.0 that also works the other way: a client with Skaft can join a Core server
+that does not have it. On older Core versions the server refused those clients with the game's
+stock incompatible-version screen, which is why Skaft 1.0.0 shipped outside the Longhouse pack.
 
-## Known gaps
+## Compatibility
 
-- **Singleplayer is the only place this has ever run.** One live world, 28 August 2026: at
-  Crafting 55 the reach measured 7.5m, which is what the curve predicts, and one swing at a
-  damaged wall repaired the two damaged walls beside it and left the intact ones alone. The
-  radius, the trigger, the health filter and the per-piece charge are confirmed there and
-  nowhere else.
-- **No second player has ever seen it.** Not a dedicated server, not a guest, not another
-  player's building. The config sync and the version gate are Core's and are exercised by
-  other mods; the sweep itself has never been swung with anybody watching.
-- **Wards are untested.** The argument in *Using it* is that the sweep inherits every check
-  vanilla makes, wards included, because it only ever runs on a piece vanilla has just
-  repaired. That is a reason to expect it to be right, not a report of it being right.
-- **Running out mid-sweep is untested.** An empty stamina bar or a hammer arriving at
-  `DurabilityFloor` part-way through one swing stops the sweep by construction. Neither stop
-  has been watched happen.
-- **These defaults are the ones you keep.** BepInEx writes every setting to disk the first
-  time the mod loads and the saved value beats any later default in code, so retuning the
-  curve in a future version reaches nobody who already has this one. The numbers are reasoned
-  and measured at a single point on the curve; they have not been played from 0 to 60.
+Built against Valheim 1.0.7, BepInEx 5.4.23.5 and Harmony 2.9. Version 1.1.0 does not run on
+pre-1.0 Valheim, and 1.0.0 does not run on 1.0.
+
+Skaft adds two Harmony postfixes, on `Player.Repair` and `Player.UpdatePlacement`, and patches
+nothing else. Another mod that prefixes `Player.Repair` and skips the original makes Skaft inert
+for that tool, which is correct: Vaettir's Transplant entry on the cultivator does exactly that,
+and no sweep should happen there.
+
+Do not run a second area repair mod alongside this one. Both would act on the same swing.
+
+## Troubleshooting
+
+**Nothing happens when I swing.** The sweep only follows a repair that vanilla itself just
+made, so aim at a damaged piece rather than at an intact one next to it. Below Crafting 10 the
+reach is under 2m, which will not reach a neighbouring piece.
+
+**Only a few pieces get repaired.** That is the stamina bar, not the radius. The sweep also
+stops at `DurabilityFloor` and at `MaxPieces`. Turn on `Verbose` and the log line says which of
+the four stopped it.
+
+**No reach line in the build menu.** Either `ShowReachInBuildMenu` is off, or the repair entry
+you selected is not named in `ReachEntries`. With `Verbose` on, the log names the entry that
+was actually selected, once per name.
+
+**A setting had no effect.** Check the cfg file first: BepInEx keeps the saved value. On a
+server running Core, the host's value is applied over yours while you are connected.
+
+**The log says it could not reach `Player.GetBuildStamina` or `WearNTear.m_lastRepair`.** A
+game update moved those members. The sweep switches off and repair stays vanilla until the mod
+is rebuilt.
+
+## Status
+
+The sweep has been played in single player and nowhere else. In a live world on 28 August 2026,
+at Crafting 55, the reach measured 7.5m, which is what the curve predicts, and one swing at a
+damaged wall repaired the two damaged walls beside it and left the intact ones alone. The
+radius, the trigger rule, the health filter, the per-piece charge, the corner message and the
+build menu line are confirmed there.
+
+Not yet exercised: a dedicated server, a second player, another player's buildings, wards, and
+running out of stamina or hammer durability part-way through a swing. The ward argument is that
+the sweep inherits vanilla's checks because it only runs on a piece vanilla just repaired, which
+is a reason to expect it to be right rather than a report of it being right.
+
+## Bug reports
+
+Report in the [Discord](https://discord.gg/hJzAVaZ5wb) or on the
+[issue tracker](https://github.com/Ezomic/valheim-skaft/issues). Useful to attach:
+
+- `BepInEx\LogOutput.log`, ideally with `Verbose` set to `true` in the config.
+- Whether you were in single player, hosting, or on a dedicated server.
+- `BepInEx\config\ezomic.valheim.skaft.cfg`.
+- `AppData\LocalLow\IronGate\Valheim\Player.log` if a vanilla mechanic broke. Exceptions thrown
+  mid-frame land there rather than in the BepInEx log.
+
+## Discord
+
+The [Discord](https://discord.gg/hJzAVaZ5wb) is where mod information, updates, support, bug
+reports and compatibility questions go.
+
+## Server
+
+There is a small EU server running the Longhouse pack if you want somewhere to play.
+Connection details are in the Discord.
 
 ## Licence
 
 MIT. See `LICENSE`.
+
+## Part of Longhouse
+
+Skaft is included in the [Longhouse](https://thunderstore.io/c/valheim/p/Ezomic/Longhouse/)
+modpack, which pins the exact versions its members run. It behaves identically installed on its
+own.
