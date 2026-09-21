@@ -236,10 +236,15 @@ damaged wall repaired the two damaged walls beside it and left the intact ones a
 radius, the trigger rule, the health filter, the per-piece charge, the corner message and the
 build menu line are confirmed there.
 
-**The bench half has not been run in game at all.** It was added in 1.2.0 and is reasoned from
-the decompiled `InventoryGui`: what vanilla charges to repair an item, what skill it grants and
-which items it refuses are read off `RepairOneItem` and `CanRepair` rather than measured at a
-bench.
+**The bench half has been run, and the curve is the curve.** On 22 September 2026 a Devkit
+scenario drove it in a live singleplayer world: twelve worn crude bows at a roofed workbench, and
+one press of Repair fixed **ten** of them at Crafting 60, **one** at Crafting 0 and **three** at
+Crafting 25. Those three numbers together are the shape of the curve, and no other shape produces
+all three.
+
+The skill payout is vanilla's, and it showed itself without being asked: the single repair at
+Crafting 0 had taken Crafting to 1 by the next step of the scenario, which is `RepairOneItem`
+granting what it always granted and the mod adding nothing of its own.
 
 Not yet exercised: a dedicated server, a second player, another player's buildings, wards, and
 running out of stamina or hammer durability part-way through a swing. The ward argument is that

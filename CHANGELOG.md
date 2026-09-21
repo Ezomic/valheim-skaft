@@ -58,10 +58,20 @@ lie about which nine things were fixed.
 
 ### What has actually been run
 
-Nothing, in game. This builds and is reasoned from the decompiled `InventoryGui`, and the
-singleplayer world that confirmed the sweep has not been opened with this in it. The claims about
-what vanilla charges and what it grants are read off `RepairOneItem` and `CanRepair` rather than
-measured at a bench.
+All of it, on 22 September 2026, in a live singleplayer world, driven start to finish by a Devkit
+scenario so that it can be run again: twelve worn crude bows at a roofed workbench, and one press
+of the Repair button fixed ten at Crafting 60, one at Crafting 0 and three at Crafting 25.
+
+Those three numbers are the point of running it. Any one of them alone is satisfied by several
+wrong implementations - ten is also what "repair everything" does, one is also what a mod that
+never ran does - and only the curve produces all three from the same press.
+
+The skill payout is vanilla's, and it showed itself without being asked: the single repair at
+Crafting 0 had taken Crafting to 1 by the next step, which is `RepairOneItem` granting exactly
+what it always granted, with the mod adding nothing of its own.
+
+Not exercised: a dedicated server, a second player, and a station too low for the item being
+repaired. That last one is vanilla's `CanRepair` either way, which is why it was left to it.
 
 ## 1.1.1 - 12 September 2026
 
