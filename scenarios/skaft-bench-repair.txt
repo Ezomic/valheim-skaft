@@ -1,0 +1,119 @@
+# Skaft: one press of the bench Repair button fixes as many worn items as Crafting allows.
+#
+# Three phases, at three skill levels, and the counts are chosen so that each one can only
+# pass at the level it names. Ten at Crafting 60, one at 0, three at 25 - a mod that repaired
+# everything, or nothing, or a fixed number, fails at least two of them.
+#
+# Twelve of ONE item, because every one of them then answers InventoryGui.CanRepair the same
+# way. A mixed kit would put the recipe lookup, the station match and the station level into a
+# test about a count, and the first failure would be unreadable.
+#
+# THE TRAP, if this fails: CanRepair refuses any item whose recipe names no crafting station
+# at all - `recipe.m_craftingStation == null && recipe.m_repairStation == null` is an outright
+# false - and refuses any whose station is not the one you are standing at. So a hammer or a
+# stone axe, craftable with no bench, can never be repaired at one. If the first `repair` here
+# reports "repaired 0" and the `worn 2` after it fails with twelve, that is the item, not the
+# mod: pick another one whose recipe names the workbench. It is a crude bow here because
+# vaettir-jib-gate already crafts that at a workbench, so the pairing is proven elsewhere.
+#
+# Stand on flat ground with about eight metres clear in front of you, and NOT near a real
+# base - `wipe` takes down everything built within 14m, not only what this placed.
+
+clear
+give Wood:250
+god
+ghost
+sweep
+
+wipe 14
+wait 1
+
+# Level the ground first. place raycasts each piece to its own height, so on a slope a
+# captured build lands in pieces and anything unsupported is gone within a second.
+flatten
+wait 1
+
+# The shelter, copied from vaettir-jib-gate, which captured it off one Robbin built by hand
+# after three attempts at guessing the geometry failed three different ways. It is here
+# because CraftingStation.CheckUsable refuses a workbench with no roof over it, and the
+# refusal is silent to everything downstream: the press does nothing and the count reads as
+# the mod being broken. The workbench line is part of the capture - the bench has to sit
+# where the shed actually covers. Lowest pieces first.
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+
+# Walk to the bench and press E on it. m_currentStation is set by exactly one thing in the
+# whole game - CraftingStation.Interact - so standing near a bench is not being at one.
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+
+# The kit. Given after the building, so `wear all` cannot catch a tool that was used to place
+# something and then report a count nobody asked for.
+give Bow:12
+wait 1
+
+
+# ---- Crafting 60: the top of the curve, which is MaxItems and is ten.
+
+skill Crafting 60
+wear all 50
+worn 12
+
+# Twelve worn, ten repaired, two left. This is the assertion the whole mod is about: at the
+# top of the curve one press clears a kit, and it stops at ten rather than at "everything".
+repair
+worn 2
+
+# And a second press finishes, rather than refusing because there are fewer than ten left.
+repair
+worn 0
+
+
+# ---- Crafting 0: vanilla, one item a press.
+
+# The reason `skill` had to exist. raiseskill only ever adds, so there is no way to put a
+# character that has Crafting back to nothing - and "the level where this mod is invisible"
+# is half of what it promises.
+skill Crafting 0
+wear all 50
+worn 12
+
+repair
+worn 11
+
+
+# ---- Crafting 25: three, which is neither of the other two answers.
+
+skill Crafting 25
+use piece_workbench
+repair
+worn 8
+
+# Shut the crafting panel `use` opened.
+close
