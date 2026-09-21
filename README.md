@@ -1,9 +1,15 @@
 # Skaft
 
-Skaft turns hammer repair into an area repair, and the size of that area is your Crafting
+Skaft is about repair, and the Crafting skill is what it pays you in.
+
+With the hammer it turns repair into an area repair, and the size of that area is your Crafting
 skill. Every piece the sweep fixes costs the same stamina, eitr and hammer durability that
 repairing it by hand would have cost, so the skill decides how far you reach and your stamina
 bar decides how much of that you can afford in one swing.
+
+At a crafting station the same skill decides how many worn items one press of the Repair button
+puts right. Vanilla charges nothing to repair an item, so there is no price there to cut and the
+count is the whole of it: one item a press at Crafting 0, a full kit from 60.
 
 *Skaft* is Old Norse for the shaft of a tool.
 
@@ -20,6 +26,11 @@ bar decides how much of that you can afford in one swing.
 - The result arrives in the usual corner message as `Repaired Wood wall x13`, using the game's
   own text.
 - The sweep will not break your hammer inside one click; it stops a durability point short.
+- One press of the Repair button at a bench repairs several worn items: one at Crafting 0, three
+  around 25, seven around 50 and ten from 60.
+- The bench half grants vanilla's own skill, per item, so nine items in one press raise Crafting
+  by exactly what nine presses raised it by.
+- Either half can be switched off on its own.
 - No new prefabs, items, recipes or saved values. A world played with Skaft is an ordinary
   world, and removing the mod leaves nothing behind.
 
@@ -58,12 +69,52 @@ stops growing but each swing affords more pieces.
 
 ### What it does not do
 
-- It does not train Crafting. Repairing a building has never given skill in this game.
+- It does not train Crafting for a building repair. Repairing a building has never given skill
+  in this game, and the sweep does not invent it. Repairing an *item* at a bench always has, and
+  that payout is left exactly as vanilla has it: per item, sized by how worn the item was.
 - It does not repair anything the hammer could not repair by hand. Other players' buildings
   yes, exactly as vanilla does, with wards as the permission system in both cases. Objects
   that are not build pieces, such as dvergr props and Ashlands altars, are skipped.
 - It does not fire the build effect, the swing animation or a corner message per piece. One
   swing already fired those once for the piece under the cursor.
+
+## The bench
+
+Stand at a crafting station, open it, and press Repair. Vanilla repairs one worn item per press.
+Skaft repairs as many as your Crafting allows:
+
+| Crafting | Items per press |
+| --- | --- |
+| 0 | 1 |
+| 14 | 2 |
+| 25 | 3 |
+| 50 | 7 |
+| 60 and above | 10 |
+
+The count is `MinItems + (MaxItems - MinItems) * (level / FullLevel)^ItemCurve`, floored, and
+`FullLevel` is the same entry the radius uses. Ten at the top is a full kit: helmet, chest, legs,
+cape, weapon, shield, bow and the three tools.
+
+**There is no price to charge here, so the count is the constraint.** Repairing an item at a
+bench costs no materials, no durability and no stamina in vanilla, which is why a kit is tedious
+to repair rather than expensive. The only cost was the pressing, so that is what the skill buys
+down, starting from vanilla's one.
+
+`ItemCurve` is a separate entry from the radius's `Curve`, and it sits above 1 where that one
+sits below it. One more metre of reach is nothing; one more item is the difference between
+pressing twice and pressing once, so the count is handed over more slowly than the metres are.
+
+### What the bench half does not change
+
+- It does not decide which items may be repaired. The game's own check does, with the recipe,
+  the repair station, the station level and the world level. A bench too low for your armour
+  still refuses it.
+- It does not change the skill. Crafting is granted per item, by the amount vanilla grants, so
+  the mod never pays you for pressing less.
+- It does not repair items in a chest, on the ground or on anybody else. It is your inventory,
+  which is what the button has always meant.
+- It does not fire the station effect or a message per item. One press sounds like one press and
+  says `Repaired 9 items` in the middle of the screen.
 
 ## Installation
 
@@ -88,14 +139,18 @@ explaining the number.
 
 | Key | Default | Effect |
 | --- | --- | --- |
-| `Enabled` | `true` | Whether the sweep runs at all. Off leaves vanilla single-piece repair untouched. |
+| `Enabled` | `true` | The whole mod, both halves. Off leaves vanilla single-piece repair untouched in both places. |
 | `MinRadius` | `0` | Reach in metres at Crafting 0. At zero the sweep does not run at all, so a new character gets plain vanilla repair. |
 | `MaxRadius` | `8` | Reach in metres once Crafting reaches `FullLevel`. At 8, a mid-wall swing covers a 10x6 longhouse end to end. |
-| `FullLevel` | `60` | The Crafting level at which the radius stops growing. |
+| `FullLevel` | `60` | The Crafting level at which the radius stops growing and a bench press reaches `MaxItems`. Shared by both halves. |
 | `Curve` | `0.8` | Exponent on the skill fraction. 1.0 is a straight line, below 1 opens the reach earlier, above 1 saves it for the top levels. |
 | `CostMultiplier` | `1` | Multiplies the stamina, eitr and durability charged per swept piece. 1 is exactly what vanilla charges to repair that piece by hand. Pieces already at full health cost nothing either way. |
 | `DurabilityFloor` | `1` | The sweep stops before the hammer would drop to or below this. At 0 a sweep can spend the hammer to its last point, which unequips it and drops you out of build mode mid-job. |
 | `MaxPieces` | `200` | Hard ceiling on pieces repaired in one swing. This is a network guard, not a balance number: each repaired piece is one message out and one broadcast back. |
+| `RepairItems` | `true` | Whether one press of the Repair button at a bench repairs more than one item. Off leaves the bench exactly as vanilla has it; the hammer sweep is unaffected either way. |
+| `MinItems` | `1` | Items one press repairs at Crafting 0. One is vanilla. |
+| `MaxItems` | `10` | Items one press repairs once Crafting reaches `FullLevel`. Ten is a full kit. |
+| `ItemCurve` | `1.5` | Exponent on the skill fraction for the bench. Above 1 saves the count for the higher levels, which is the opposite of what `Curve` does for the radius, and deliberately so. |
 | `OwnBuildingsOnly` | `false` | Restrict the sweep to pieces you placed. False matches vanilla, which repairs anyone's building and leaves permission to wards. The piece directly under your cursor is always vanilla's business, not this setting's. |
 | `ShowReachInBuildMenu` | `true` | Add the reach line to the Repair entry in the build menu. |
 | `ReachEntries` | `piece_repair` | Comma separated prefab names of the build menu entries the reach line is written on. Other mods hang their own click-on-the-world tools off the same flag, and the sweep can never run on those, so the line is only written on names listed here. |
@@ -112,10 +167,13 @@ have this one keep the old numbers unless the cfg line is edited or deleted.
 
 ## Multiplayer
 
-Skaft works for whoever installs it. Every decision is made on the client swinging the hammer,
-from state that client already has, and the only thing that leaves the machine is the repair
-message vanilla would have sent anyway. Players without the mod are unaffected: they repair one
-piece per swing.
+Skaft works for whoever installs it. Every decision is made on the client swinging the hammer or
+pressing the button, from state that client already has, and the only thing that leaves the
+machine is the repair message vanilla would have sent anyway. Players without the mod are
+unaffected: they repair one piece per swing and one item per press.
+
+The bench half never touches the network at all. It writes durability on items in your own
+inventory, which is the field vanilla's own Repair button sets, and nobody else can see it.
 
 None of this can be enforced by the server. `WearNTear.RPC_Repair` has no permission check and
 the server forwards it without inspecting the sender, so any client has always been able to
@@ -126,8 +184,9 @@ With Longhouse Core installed on both ends, the host's settings are applied on c
 clients in memory for as long as they are connected. The client's own config file is not
 written, and their values come back on disconnect. That is what makes the curve a property of
 the server rather than an agreement between players: without it, anyone can set `MaxRadius` to
-100 and `CostMultiplier` to 0 in their own file. `ShowReachInBuildMenu` and `Verbose` are
-exempt from the sync, since they are display and diagnostics rather than balance.
+100 and `CostMultiplier` to 0 in their own file. `RepairItems`, `MinItems`, `MaxItems` and
+`ItemCurve` are synced for the same reason. `ShowReachInBuildMenu` and `Verbose` are exempt,
+since they are display and diagnostics rather than balance.
 
 Skaft registers with Core as host-only, so a client without Skaft can join a server that has
 it. From Core 1.2.0 that also works the other way: a client with Skaft can join a Core server
@@ -136,15 +195,17 @@ stock incompatible-version screen, which is why Skaft 1.0.0 shipped outside the 
 
 ## Compatibility
 
-Built against Valheim 1.0.7, BepInEx 5.4.23.5 and Harmony 2.9. Version 1.1.0 does not run on
-pre-1.0 Valheim, and 1.0.0 does not run on 1.0.
+Built against Valheim 1.0.7, BepInEx 5.4.23.5 and Harmony 2.9. Version 1.1.0 and later do not
+run on pre-1.0 Valheim, and 1.0.0 does not run on 1.0.
 
-Skaft adds two Harmony postfixes, on `Player.Repair` and `Player.UpdatePlacement`, and patches
-nothing else. Another mod that prefixes `Player.Repair` and skips the original makes Skaft inert
-for that tool, which is correct: Vaettir's Transplant entry on the cultivator does exactly that,
-and no sweep should happen there.
+Skaft adds three Harmony postfixes, on `Player.Repair`, `Player.UpdatePlacement` and
+`InventoryGui.RepairOneItem`, and patches nothing else. Another mod that prefixes `Player.Repair`
+and skips the original makes the sweep inert for that tool, which is correct: Vaettir's
+Transplant entry on the cultivator does exactly that, and no sweep should happen there.
 
-Do not run a second area repair mod alongside this one. Both would act on the same swing.
+Do not run a second area repair mod alongside this one. Both would act on the same swing. The
+same goes for a second repair-all-items mod: both would act on the same press, and the second
+one would find nothing left to do or repair past this one's count.
 
 ## Troubleshooting
 
@@ -174,6 +235,11 @@ at Crafting 55, the reach measured 7.5m, which is what the curve predicts, and o
 damaged wall repaired the two damaged walls beside it and left the intact ones alone. The
 radius, the trigger rule, the health filter, the per-piece charge, the corner message and the
 build menu line are confirmed there.
+
+**The bench half has not been run in game at all.** It was added in 1.2.0 and is reasoned from
+the decompiled `InventoryGui`: what vanilla charges to repair an item, what skill it grants and
+which items it refuses are read off `RepairOneItem` and `CanRepair` rather than measured at a
+bench.
 
 Not yet exercised: a dedicated server, a second player, another player's buildings, wards, and
 running out of stamina or hammer durability part-way through a swing. The ward argument is that

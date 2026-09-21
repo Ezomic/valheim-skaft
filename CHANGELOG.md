@@ -1,5 +1,68 @@
 # Changelog
 
+## 1.2.0 - 22 September 2026
+
+The bench half of repair. The hammer sweep is untouched.
+
+### Added
+
+- **One press of the Repair button at a crafting station now repairs several worn items**, and
+  how many is your Crafting skill. One at level 0, two from about 14, three around 25, seven
+  around 50 and ten from 60 - ten being a full kit, which is helmet, chest, legs, cape, weapon,
+  shield, bow and the three tools. So coming back from the swamp is one press at the top of the
+  curve and ten presses at the bottom of it, which is where the game already had you.
+
+  The count is `MinItems + (MaxItems - MinItems) * (level / FullLevel)^ItemCurve`, floored, read
+  fresh on every press. `FullLevel` is the same entry the radius uses: one skill, one level at
+  which it has arrived.
+
+### Why a count, when the sweep charges a price
+
+Because there is no price here to charge. Vanilla asks for no materials, no durability and no
+stamina to repair an item at a bench - the presses were the whole cost of it, which is why
+repairing a kit is tedious rather than expensive. A mod that cut a price here would be cutting
+nothing. So the constraint is the number itself: it starts at vanilla's one, and the skill is
+what buys it up.
+
+`ItemCurve` is its own entry rather than the radius's `Curve`, and it sits above 1 where that one
+sits below it. A count is a much coarser dial than metres: one more metre of reach is nothing,
+one more item is the difference between pressing twice and pressing once. Sharing the radius
+curve would have handed out three items a press at Crafting 10, at a level where the radius is
+deliberately still worth nothing.
+
+### The skill it pays is vanilla's, unchanged
+
+`RepairOneItem` raises Crafting by how worn the item was, once per item. This repairs items the
+same way and grants the same amount for each, so nine items in one press raise Crafting by
+exactly what nine presses raised it by. That matters because Crafting is what buys the count: if
+the payout had been per press rather than per item, the mod would have been feeding the skill
+that grants it. It is not. Only the pressing changes.
+
+### What it leaves alone
+
+It does not decide which items may be repaired. `InventoryGui.CanRepair` does, as it always has,
+which carries the recipe lookup, the repair-station match, the station level and the world level.
+A bench too low for your armour still refuses it, and refuses it here for the same reason.
+
+It does not fire the station effect once per item, and does not report one item at a time. One
+press sounds like one press and says `Repaired 9 items` in the middle of the screen, on vanilla's
+own `$msg_repaired` line with a count where the item name goes. Naming one of nine items and
+putting `x9` after it - the trick the sweep uses for a wall repaired thirteen times - would be a
+lie about which nine things were fixed.
+
+### Changed
+
+- `Enabled` now means the whole mod rather than only the sweep. `RepairItems` is the switch that
+  keeps one half and drops the other.
+- `FullLevel` now drives both halves.
+
+### What has actually been run
+
+Nothing, in game. This builds and is reasoned from the decompiled `InventoryGui`, and the
+singleplayer world that confirmed the sweep has not been opened with this in it. The claims about
+what vanilla charges and what it grants are read off `RepairOneItem` and `CanRepair` rather than
+measured at a bench.
+
 ## 1.1.1 - 12 September 2026
 
 ### Changed

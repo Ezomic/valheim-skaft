@@ -28,6 +28,11 @@ namespace Skaft
         public static ConfigEntry<float> DurabilityFloor;
         public static ConfigEntry<int> MaxPieces;
 
+        public static ConfigEntry<bool> RepairItems;
+        public static ConfigEntry<int> MinItems;
+        public static ConfigEntry<int> MaxItems;
+        public static ConfigEntry<float> ItemCurve;
+
         public static ConfigEntry<bool> OwnBuildingsOnly;
         public static ConfigEntry<bool> ShowReachInBuildMenu;
         public static ConfigEntry<string> ReachEntries;
@@ -64,10 +69,11 @@ namespace Skaft
         public static void Bind(ConfigFile config)
         {
             Enabled = config.Bind("Skaft", "Enabled", true,
-                "Whether the repair sweep runs at all. Off leaves vanilla single-piece repair "
-                + "untouched - which is also exactly what this mod does at Crafting 0, so "
-                + "turning it off is only useful for telling the mod apart from a low skill "
-                + "level.");
+                "The whole mod, both halves of it: the hammer sweep on buildings and the Repair "
+                + "button at the bench. Off leaves vanilla single-piece repair untouched in both "
+                + "places - which is also exactly what this mod does at Crafting 0, so turning it "
+                + "off is only useful for telling the mod apart from a low skill level. To keep "
+                + "one half and drop the other, use RepairItems.");
 
             MinRadius = config.Bind("Skaft", "MinRadius", 0f,
                 "Sweep radius in metres at Crafting 0, measured from the piece under your "
@@ -85,7 +91,9 @@ namespace Skaft
                 + "runs out.");
 
             FullLevel = config.Bind("Skaft", "FullLevel", 60f,
-                "The Crafting level at which the radius reaches MaxRadius. Above it nothing "
+                "The Crafting level at which the radius reaches MaxRadius and a bench press "
+                + "reaches MaxItems. Shared by both halves on purpose: one skill, one level at "
+                + "which it has arrived. Above it nothing "
                 + "changes. 100 is the wrong number to design against: it costs roughly 20,300 "
                 + "crafts, and Crafting only rises by crafting or upgrading at a station and by "
                 + "repairing a worn item - repairing buildings trains nothing at all. 60 is "
@@ -123,6 +131,37 @@ namespace Skaft
                 + "is a network guard, not a balance number - each repaired piece is one "
                 + "message to the piece's owner and one broadcast back, so 200 is 400 messages "
                 + "in a single frame. Balance is stamina and durability.");
+
+            RepairItems = config.Bind("Skaft", "RepairItems", true,
+                "Whether one press of the Repair button at a crafting station repairs more than "
+                + "one item. Off leaves the bench exactly as vanilla has it, one item a press, "
+                + "and the hammer sweep is unaffected either way. This is the only switch that "
+                + "separates the two halves of the mod.");
+
+            MinItems = config.Bind("Skaft", "MinItems", 1,
+                "How many items one press of the Repair button fixes at Crafting 0. One is "
+                + "vanilla, and it is the floor for the same reason MinRadius is zero: a new "
+                + "character should get the game as it ships, and the mod should be something "
+                + "the character grows into rather than something the install hands over.");
+
+            MaxItems = config.Bind("Skaft", "MaxItems", 10,
+                "How many items one press of the Repair button fixes once Crafting reaches "
+                + "FullLevel. Ten is a full kit - helmet, chest, legs, cape, weapon, shield, bow "
+                + "and the three tools - so at the top of the curve coming home is one press "
+                + "rather than ten. Nothing is made cheaper by this: vanilla charges no "
+                + "materials, no durability and no stamina to repair an item, so the presses "
+                + "were the whole price and the skill is what buys them down. Unlike the sweep "
+                + "there is no stamina bar to stop it, which is why the number itself is the "
+                + "constraint and why it starts at one.");
+
+            ItemCurve = config.Bind("Skaft", "ItemCurve", 1.5f,
+                "Exponent on the skill fraction for the bench, the way Curve is for the radius: "
+                + "items = min + (max-min) * (level/FullLevel)^ItemCurve, floored. It is a "
+                + "separate number, and above 1 where Curve is below it, because a count is a "
+                + "much coarser dial than metres - one more metre of reach is nothing, one more "
+                + "item is the difference between pressing twice and pressing once. At the "
+                + "default the bench is vanilla until about Crafting 14, three items around 25, "
+                + "seven around 50 and ten at 60.");
 
             OwnBuildingsOnly = config.Bind("Skaft", "OwnBuildingsOnly", false,
                 "Restrict the sweep to pieces you placed yourself. False matches vanilla, which "

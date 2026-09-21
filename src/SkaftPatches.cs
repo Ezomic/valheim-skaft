@@ -5,15 +5,20 @@ using UnityEngine;
 namespace Skaft
 {
     /// <summary>
-    /// Two postfixes. No prefix, no transpiler, no second entry point.
+    /// Three postfixes. No prefix, no transpiler, no second entry point.
     ///
-    /// The design argument for both of them is the same one: ride vanilla rather than
+    /// The design argument for all of them is the same one: ride vanilla rather than
     /// re-deriving it. Player.Repair already checks build mode, resolves the hovered piece,
     /// runs CheckCanRemovePiece and PrivateArea.CheckAccess on it, refuses a piece at full
     /// health and honours WearNTear's one-second cooldown. A prefix that replaced the method
     /// would own copies of all six, and would own them again after every game update. A
     /// postfix that only asks "did that actually repair something" inherits the lot, including
     /// whatever guard a future update adds.
+    ///
+    /// InventoryGui.RepairOneItem is the same arrangement one verb along: it has already found
+    /// a usable station and let CanRepair pick the item, so a postfix that fixes the rest of
+    /// the press's allowance inherits the recipe lookup, the station match, the station level
+    /// and the world level without holding a copy of any of them.
     /// </summary>
     internal static class SkaftPatches
     {
@@ -58,6 +63,26 @@ namespace Skaft
             if (!Sweep.JustRepaired(hoveredWear)) return;
 
             Sweep.Run(__instance, toolItem, hovered, hoveredWear);
+        }
+
+        /// <summary>
+        /// The bench half: after vanilla repairs the first worn item, repair the rest of what
+        /// this player's Crafting allows in the same press.
+        ///
+        /// Patched on RepairOneItem rather than on OnRepairPressed, which is the method the
+        /// button actually calls. OnRepairPressed also runs UpdateRepair and UpdateCraftingPanel
+        /// afterwards, and both of those re-read whether anything repairable is left - so sitting
+        /// inside the pair means the button's glow and the panel are refreshed against the state
+        /// this left behind, for free. A postfix on the outer method would repair after they had
+        /// already drawn, and the button would keep glowing for one more press.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(InventoryGui), "RepairOneItem")]
+        private static void RepairOneItem(InventoryGui __instance)
+        {
+            if (!SkaftConfig.Enabled.Value || !SkaftConfig.RepairItems.Value) return;
+
+            Bench.Run(__instance);
         }
 
         /// <summary>How long between reach-line refreshes, in seconds.</summary>

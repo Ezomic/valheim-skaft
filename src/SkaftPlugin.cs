@@ -9,7 +9,8 @@ namespace Skaft
 {
     /// <summary>
     /// Skaft. Repairing with the hammer also repairs the pieces around what you hit, and how far
-    /// that reaches is your Crafting skill.
+    /// that reaches is your Crafting skill. The same skill says how many worn items one press of
+    /// the Repair button at a bench puts right.
     ///
     /// Area repair already exists and it is popular, and the reason is that maintaining a base
     /// one wall at a time after a troll walks through it is tedious rather than interesting. The
@@ -25,6 +26,14 @@ namespace Skaft
     /// The obvious alternative was to scale the *cost* down with skill instead, or to key the
     /// radius on a config number and be done. Both were rejected for the same reason: they end
     /// at maintenance being free, one immediately and one eventually.
+    ///
+    /// The bench half answers the same tedium through the other verb the game spells "repair",
+    /// and it cannot be constrained the same way, because vanilla charges nothing at all to
+    /// repair an item - no materials, no durability, no stamina. The presses were the whole
+    /// price, so the count is the constraint: one item a press until the skill is worth
+    /// something, a full kit at the level the radius tops out. The skill it pays is vanilla's
+    /// own, granted per item, so nine items in one press raise Crafting by exactly what nine
+    /// presses raised it by.
     ///
     /// Client-side, in the honest sense: every decision is made by the player swinging the
     /// hammer, off state that client already has, and the only thing that leaves the machine is
@@ -52,7 +61,7 @@ namespace Skaft
     {
         public const string PluginGuid = "ezomic.valheim.skaft";
         public const string PluginName = "Skaft";
-        public const string PluginVersion = "1.1.1";
+        public const string PluginVersion = "1.2.0";
         public const string PluginAuthor = "Robbin Thijssen";
 
         /// <summary>Core's plugin GUID. Optional - see TryRegisterWithCore.</summary>
@@ -125,9 +134,15 @@ namespace Skaft
         private void RegisterWithCore()
         {
             // HostOnly, and it is not a preference. This mod registers no prefab, writes no ZDO
-            // key it invented, changes no item data and sends no RPC vanilla does not already
-            // send, so a client without it is genuinely unaffected - it just repairs one piece
-            // at a swing. Everyone would refuse those clients for nothing.
+            // key it invented and sends no RPC vanilla does not already send, so a client without
+            // it is genuinely unaffected - it just repairs one piece at a swing and one item at a
+            // press. Everyone would refuse those clients for nothing.
+            //
+            // The bench half does write durability, which the line above used to deny outright.
+            // It writes it on the local player's own inventory items, which is the field vanilla's
+            // own Repair button sets and which never leaves the machine except in that player's
+            // own save - not on a prefab, not on a shared item, and not on anything another
+            // player can see.
             //
             // HostOnly still checks clients that DO have it against the host, which is the half
             // that matters here: it is what makes the curve the host's to set.
@@ -137,7 +152,9 @@ namespace Skaft
             // It is worth writing anyway: these are the mod's balance, plus the kill switch, and
             // saying out loud that the host owns them is the point of putting Skaft on a server.
             Suite.Sync(SkaftConfig.Enabled, SkaftConfig.MinRadius, SkaftConfig.MaxRadius,
-                       SkaftConfig.FullLevel, SkaftConfig.Curve, SkaftConfig.CostMultiplier);
+                       SkaftConfig.FullLevel, SkaftConfig.Curve, SkaftConfig.CostMultiplier,
+                       SkaftConfig.RepairItems, SkaftConfig.MinItems, SkaftConfig.MaxItems,
+                       SkaftConfig.ItemCurve);
 
             // Opting two back out. Both are display and diagnostics rather than balance, and a
             // host reaching across to turn off someone's build-menu line, or to switch on their
