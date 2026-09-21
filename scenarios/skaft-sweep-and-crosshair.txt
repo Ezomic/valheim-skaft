@@ -1,0 +1,105 @@
+# Skaft: what the crosshair says about the sweep.
+#
+# The half that had never been scripted. It needed four things Devkit could not do - damage a
+# piece without destroying it, put a build tool in hand with an entry selected, aim the camera
+# at something, and read what the crosshair says - so the sweep was tested by hand in one world
+# in August and the crosshair line not at all.
+#
+# Four claims, in order:
+#
+#   1. Nothing damaged in reach says so.
+#   2. Pointing at an INTACT piece with damaged neighbours says to aim at a damaged one. This is
+#      the mod's first troubleshooting entry and the thing most likely to be reported as a bug:
+#      the sweep only follows a repair vanilla itself just made, so a swing at a whole wall does
+#      nothing however much is broken beside it.
+#   3. Pointing at a DAMAGED piece counts that piece and its damaged neighbours.
+#   4. Below the curve there is no reach, so there is no line at all - not a line reading zero.
+#
+# It does NOT swing the hammer, and cannot: Player.Repair runs off input, and a scenario has no
+# way to press the attack button. So the repairing itself is still the August test and the hand.
+# What this covers is everything the crosshair claims about it, which is what a player reads
+# before deciding the mod is broken.
+#
+# THE GEOMETRY MATTERS, so it is written down. Five walls three metres ahead, two metres apart,
+# at right -4 -2 0 2 4. From the player the middle one is 3.0m and is therefore what `face` and
+# `damage` reach first; its neighbours are 3.6m and the outer pair 5.0m. But the sweep's radius
+# is measured from the HOVERED PIECE, not from you - so from the middle wall the neighbours are
+# 2m away and the outer pair 4m, and at Crafting 60 all five are within the 8m reach.
+#
+# Stand on flat ground with about eight metres clear in front of you, and NOT near a real base -
+# `wipe` takes down everything built within 14m, not only what this placed.
+
+clear
+give Wood:250,Hammer:1
+god
+ghost
+sweep
+
+wipe 14
+wait 1
+flatten
+wait 1
+
+place woodwall 3 -4
+place woodwall 3 -2
+place woodwall 3 0
+place woodwall 3 2
+place woodwall 3 4
+wait 2
+
+skill Crafting 60
+
+# Repair selected, which is the entry Skaft's ReachEntries names. It is also what puts the game
+# in build mode at all, and without build mode there is no hovered piece for any of this to be
+# about - UpdateWearNTearHover returns early on !InPlaceMode().
+tool Hammer piece_repair
+wait 1
+
+
+# ---- 1. nothing damaged: the line says so rather than saying nothing.
+
+face woodwall
+wait 1
+hovering woodwall
+crosshair Damaged_in_reach:_none
+
+
+# ---- 2. hovered piece intact, neighbours broken: aim at a damaged one.
+
+# The inner radius is what makes this expressible. Without it the nearest wall is the middle
+# one - the one that has to stay whole - and there would be no way to break its neighbours
+# without breaking it first.
+damage woodwall 60 6 3.3
+damage woodwall 60 6 3.3
+wait 1
+
+face woodwall
+wait 1
+hovering woodwall
+crosshair aim_at_a_damaged_piece
+
+
+# ---- 3. hovered piece damaged: it counts itself and the two neighbours.
+
+damage woodwall 60 3.2
+wait 1
+
+face woodwall
+wait 1
+hovering woodwall
+crosshair Damaged_in_reach:_3
+
+
+# ---- 4. no reach, no line.
+
+# Nothing in the world changed - only the skill. At Crafting 0 the radius is zero, and Skaft
+# writes no line at all rather than one reading zero: a new character is not told about a
+# feature they have not got yet. `nothing` is the sentinel for an empty crosshair, and it is
+# not `none` because "Damaged in reach: none" is a real thing this line says.
+skill Crafting 0
+wait 1
+face woodwall
+wait 1
+crosshair nothing
+
+close
