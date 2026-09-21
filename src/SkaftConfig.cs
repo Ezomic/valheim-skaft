@@ -35,6 +35,7 @@ namespace Skaft
 
         public static ConfigEntry<bool> OwnBuildingsOnly;
         public static ConfigEntry<bool> ShowReachInBuildMenu;
+        public static ConfigEntry<bool> ShowDamagedInReach;
         public static ConfigEntry<string> ReachEntries;
 
         public static ConfigEntry<bool> Verbose;
@@ -175,6 +176,16 @@ namespace Skaft
                 + "metres and the Crafting level it came from. This is the only place the "
                 + "number is shown; after a swing, the \"Repaired x12\" count tells you the "
                 + "rest.");
+
+            ShowDamagedInReach = config.Bind("Skaft", "ShowDamagedInReach", true,
+                "Show how many damaged pieces are in reach under the crosshair, while a repair "
+                + "entry is selected and you are pointing at a piece. It is there because a "
+                + "piece above 75% health looks perfect - the game only swaps in the worn model "
+                + "below three quarters and the broken one below a quarter, so the top of every "
+                + "health bar is damage you cannot see - and because a swing at an intact piece "
+                + "does nothing at all however much is broken around it. The line says which of "
+                + "those you are looking at. It counts damage and distance only: stamina, hammer "
+                + "durability, wards and a missing station can still cut the swing short.");
 
             ReachEntries = config.Bind("Skaft", "ReachEntries", "piece_repair",
                 "Comma separated prefab names of the build menu entries the reach line is "

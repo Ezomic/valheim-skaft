@@ -22,7 +22,8 @@ count is the whole of it: one item a press at Crafting 0, a full kit from 60.
 - Pieces are repaired nearest first, so a swing that runs out of stamina has fixed the wall in
   front of you.
 - The Repair entry in the build menu shows your current reach in metres and the Crafting level
-  it came from.
+  it came from, and the crosshair shows how many damaged pieces are in reach of what you are
+  pointing at.
 - The result arrives in the usual corner message as `Repaired Wood wall x13`, using the game's
   own text.
 - The sweep will not break your hammer inside one click; it stops a durability point short.
@@ -39,11 +40,20 @@ count is the whole of it: one item a press at Crafting 0, a full kit from 60.
 Take out the hammer, select Repair, and hit something damaged. Everything damaged within reach
 of that piece is repaired until your stamina or your hammer durability runs out.
 
-**Point at something broken.** The sweep only runs when the piece under your cursor was itself
-repaired by that swing. Hovering an intact wall next to a damaged one does nothing, and a
-second click within a second does nothing, because vanilla holds each piece on a one second
-repair cooldown. Following vanilla's own success is how the mod inherits every check the game
-already makes: build mode, the crafting station a piece requires, ward access, and the
+**Point at something broken.** With a repair entry selected, the crosshair says how many damaged
+pieces are in reach of the one you are aiming at - and says `aim at a damaged piece` when that
+one is intact, because the sweep only runs when the piece under your cursor was itself repaired
+by that swing.
+
+That line is worth having because damage is mostly invisible. The game swaps in the worn model
+below three quarters health and the broken one below a quarter, and shows nothing at all above
+that, so a wall at 90% looks new. The count is damage and distance only: stamina, hammer
+durability, wards and a missing station can still cut the swing short, so it is what the swing
+will attempt rather than a promise about what it will finish.
+
+A second click within a second also does nothing, because vanilla holds each piece on a one
+second repair cooldown. Following vanilla's own success is how the mod inherits every check the
+game already makes: build mode, the crafting station a piece requires, ward access, and the
 full-health test.
 
 The radius is `MinRadius + (MaxRadius - MinRadius) * (level / FullLevel)^Curve`, read fresh on
@@ -153,6 +163,7 @@ explaining the number.
 | `ItemCurve` | `1.5` | Exponent on the skill fraction for the bench. Above 1 saves the count for the higher levels, which is the opposite of what `Curve` does for the radius, and deliberately so. |
 | `OwnBuildingsOnly` | `false` | Restrict the sweep to pieces you placed. False matches vanilla, which repairs anyone's building and leaves permission to wards. The piece directly under your cursor is always vanilla's business, not this setting's. |
 | `ShowReachInBuildMenu` | `true` | Add the reach line to the Repair entry in the build menu. |
+| `ShowDamagedInReach` | `true` | Show `Damaged in reach: 13` under the crosshair while a repair entry is selected and you are pointing at a piece. Counts damage and distance only. |
 | `ReachEntries` | `piece_repair` | Comma separated prefab names of the build menu entries the reach line is written on. Other mods hang their own click-on-the-world tools off the same flag, and the sweep can never run on those, so the line is only written on names listed here. |
 
 ### [Diagnostics]
@@ -185,8 +196,8 @@ clients in memory for as long as they are connected. The client's own config fil
 written, and their values come back on disconnect. That is what makes the curve a property of
 the server rather than an agreement between players: without it, anyone can set `MaxRadius` to
 100 and `CostMultiplier` to 0 in their own file. `RepairItems`, `MinItems`, `MaxItems` and
-`ItemCurve` are synced for the same reason. `ShowReachInBuildMenu` and `Verbose` are exempt,
-since they are display and diagnostics rather than balance.
+`ItemCurve` are synced for the same reason. `ShowReachInBuildMenu`, `ShowDamagedInReach` and
+`Verbose` are exempt, since they are display and diagnostics rather than balance.
 
 Skaft registers with Core as host-only, so a client without Skaft can join a server that has
 it. From Core 1.2.0 that also works the other way: a client with Skaft can join a Core server
@@ -198,8 +209,8 @@ stock incompatible-version screen, which is why Skaft 1.0.0 shipped outside the 
 Built against Valheim 1.0.7, BepInEx 5.4.23.5 and Harmony 2.9. Version 1.1.0 and later do not
 run on pre-1.0 Valheim, and 1.0.0 does not run on 1.0.
 
-Skaft adds three Harmony postfixes, on `Player.Repair`, `Player.UpdatePlacement` and
-`InventoryGui.RepairOneItem`, and patches nothing else. Another mod that prefixes `Player.Repair`
+Skaft adds four Harmony postfixes, on `Player.Repair`, `Player.UpdatePlacement`,
+`InventoryGui.RepairOneItem` and `Hud.UpdateCrosshair`, and patches nothing else. Another mod that prefixes `Player.Repair`
 and skips the original makes the sweep inert for that tool, which is correct: Vaettir's
 Transplant entry on the cultivator does exactly that, and no sweep should happen there.
 
@@ -210,8 +221,9 @@ one would find nothing left to do or repair past this one's count.
 ## Troubleshooting
 
 **Nothing happens when I swing.** The sweep only follows a repair that vanilla itself just
-made, so aim at a damaged piece rather than at an intact one next to it. Below Crafting 10 the
-reach is under 2m, which will not reach a neighbouring piece.
+made, so aim at a damaged piece rather than at an intact one next to it. The crosshair says
+which of those you are looking at. Below Crafting 10 the reach is under 2m, which will not
+reach a neighbouring piece.
 
 **Only a few pieces get repaired.** That is the stamina bar, not the radius. The sweep also
 stops at `DurabilityFloor` and at `MaxPieces`. Turn on `Verbose` and the log line says which of
@@ -245,6 +257,11 @@ all three.
 The skill payout is vanilla's, and it showed itself without being asked: the single repair at
 Crafting 0 had taken Crafting to 1 by the next step of the scenario, which is `RepairOneItem`
 granting what it always granted and the mod adding nothing of its own.
+
+**The crosshair count has not been run at all.** It was added in 1.3.0 and is reasoned from
+the decompiled `Hud` and `WearNTear` - the health thresholds at which a piece starts to look
+damaged are read off `UpdateVisual`, and nothing has yet stood in a world and pointed at a wall
+with it on.
 
 Not yet exercised: a dedicated server, a second player, another player's buildings, wards, and
 running out of stamina or hammer durability part-way through a swing. The ward argument is that

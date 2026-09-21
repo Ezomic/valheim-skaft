@@ -14,7 +14,7 @@
     <AssemblyName>Skaft</AssemblyName>
     <RootNamespace>Skaft</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Authors>Robbin Thijssen</Authors>
     <Company>Thijssen Software</Company>
     <Product>Skaft</Product>
@@ -58,6 +58,12 @@
     <!-- Localization lives here, not in assembly_valheim. The sweep needs it for $msg_repaired,
          which is how the count reaches the player in a language the game already ships. -->
     <Reference Include="assembly_guiutils"><HintPath>$(ManagedDir)\assembly_guiutils.dll</HintPath><Private>false</Private></Reference>
+    <!-- The crosshair line is written into Hud.m_hoverName, which is a TextMeshProUGUI in 1.0
+         rather than a UnityEngine.UI.Text. TMP_Text derives from MaskableGraphic, so
+         UnityEngine.UI and UIModule come along with it whether or not this mod names a type
+         from either. -->
+    <Reference Include="Unity.TextMeshPro"><HintPath>$(ManagedDir)\Unity.TextMeshPro.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UI"><HintPath>$(ManagedDir)\UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="BepInEx"><HintPath>$(BepInExCore)\BepInEx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(BepInExCore)\0Harmony.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>

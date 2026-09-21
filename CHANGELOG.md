@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.3.0 - 22 September 2026
+
+One line under the crosshair. No change to what a swing or a press does.
+
+### Added
+
+- **`Damaged in reach: 13` under the crosshair**, while a repair entry is selected and you are
+  pointing at a piece. It counts the piece under the cursor and every damaged piece within your
+  current reach of it.
+
+  When the piece under the cursor is intact the line reads `Damaged in reach: 12 (aim at a
+  damaged piece)`, because that is the one swing the mod will not answer. When nothing in reach
+  is damaged it reads `Damaged in reach: none`. Below the reach curve there is no line at all,
+  the same way there is no sweep.
+
+  `ShowDamagedInReach` turns it off. Like the build menu line it is display rather than balance,
+  so a host running Core does not get to decide it for anybody.
+
+### Why a count is worth a line of its own
+
+**Damage above three quarters is invisible.** `WearNTear.UpdateVisual` swaps in the worn model
+below 0.75 health and the broken one below 0.25, and does nothing above that - so a wall at 90%
+looks exactly like a wall at 100%, and a base that has been rained on for a week looks fine. The
+health bar tells you about the one piece you are already pointing at, which is the piece you
+least need telling about.
+
+**And a swing at an intact piece does nothing.** The sweep only follows a repair vanilla itself
+just made, which is what buys it build mode, the station requirement, ward access and the repair
+cooldown for free. The cost of that is a rule nothing in the game states: point at something
+broken. It has been the first entry in this mod's troubleshooting section since 1.0.0, which is
+the wrong place to keep an answer.
+
+### What the number is, exactly
+
+Damaged, and in reach. It is the same pass the swing itself makes to find candidates, called
+from the HUD instead of from the hammer, so the two cannot drift apart. Everything that can
+refuse a piece afterwards still refuses it: stamina, hammer durability, `MaxPieces`, wards and a
+missing crafting station. So the count is what the swing will attempt, not a promise about what
+it will finish, and on a long wall the stamina bar will usually stop first.
+
+It is recounted whenever the cursor moves to a different piece, and four times a second while it
+holds still.
+
+### What has actually been run
+
+Nothing, in game. This builds and is reasoned from the decompiled `Hud` and `WearNTear`. The
+0.75 and 0.25 thresholds are read off `UpdateVisual`.
+
 ## 1.2.0 - 22 September 2026
 
 The bench half of repair. The hammer sweep is untouched.

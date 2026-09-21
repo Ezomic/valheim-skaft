@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Skaft
 {
     /// <summary>
-    /// Three postfixes. No prefix, no transpiler, no second entry point.
+    /// Four postfixes. No prefix, no transpiler, no second entry point.
     ///
     /// The design argument for all of them is the same one: ride vanilla rather than
     /// re-deriving it. Player.Repair already checks build mode, resolves the hovered piece,
@@ -83,6 +83,100 @@ namespace Skaft
             if (!SkaftConfig.Enabled.Value || !SkaftConfig.RepairItems.Value) return;
 
             Bench.Run(__instance);
+        }
+
+        /// <summary>How long between damaged-count refreshes while the cursor holds still.</summary>
+        private const float CountInterval = 0.25f;
+
+        private static float _nextCount;
+        private static WearNTear _countedFor;
+        private static string _countLine;
+
+        /// <summary>
+        /// Puts the number of damaged pieces in reach under the crosshair, while a repair entry
+        /// is selected and you are pointing at a piece.
+        ///
+        /// This answers the mod's most-asked question and its first troubleshooting entry at the
+        /// same time, and the second one is why it exists. A piece above 75% health looks
+        /// perfect: WearNTear.UpdateVisual only swaps in the worn model below 0.75 and the broken
+        /// one below 0.25, so the top quarter of every health bar is invisible damage. A player
+        /// hunting for what to hit therefore cannot see it, and a swing at an intact wall beside
+        /// a damaged one does nothing at all, because the sweep only follows a repair vanilla
+        /// itself just made. Both of those read as the mod being broken. One line says otherwise.
+        ///
+        /// Written into m_hoverName rather than anywhere of ours. Vanilla rewrites that field
+        /// every frame from the hovered object's own hover text - and leaves it empty for a plain
+        /// wall, which has no Hoverable - so appending costs no state, needs no undo, and cannot
+        /// survive the mod being switched off mid-session the way the build menu line can.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Hud), "UpdateCrosshair")]
+        private static void UpdateCrosshair(Hud __instance, Player player)
+        {
+            if (!SkaftConfig.Enabled.Value || !SkaftConfig.ShowDamagedInReach.Value) return;
+            if (__instance == null || player == null || player != Player.m_localPlayer) return;
+
+            var label = __instance.m_hoverName;
+            if (label == null) return;
+
+            // Same gate as the build menu line, and for the same reason: m_repairPiece means
+            // "this entry clicks on the world" rather than "this is the hammer's Repair", and
+            // the sweep provably cannot run on another mod's tool. A count written there would
+            // describe something that is never going to happen.
+            Piece selected = player.GetSelectedPiece();
+            if (selected == null || !selected.m_repairPiece
+                || !SkaftConfig.IsReachEntry(Utils.GetPrefabName(selected.gameObject.name)))
+            {
+                _countLine = null;
+                _countedFor = null;
+                return;
+            }
+
+            Piece hovered = player.GetHoveringPiece();
+            if (hovered == null || !hovered.TryGetComponent(out WearNTear hoveredWear))
+            {
+                _countLine = null;
+                _countedFor = null;
+                return;
+            }
+
+            float radius = Sweep.Radius(player);
+            if (radius <= 0f)
+            {
+                // Below the curve there is no sweep, so there is nothing to report. Saying
+                // "0 in reach" would describe a radius rather than a base, and a new character
+                // should not be told about a feature they do not have yet.
+                _countLine = null;
+                _countedFor = null;
+                return;
+            }
+
+            // Keyed on the piece as well as the clock. A throttle alone would leave the line
+            // describing whatever was under the cursor a quarter of a second ago, which is a
+            // different wall every time the mouse moves - so a new piece recounts at once and
+            // only a cursor holding still falls back to the interval.
+            if (hoveredWear != _countedFor || Time.time >= _nextCount)
+            {
+                _countedFor = hoveredWear;
+                _nextCount = Time.time + CountInterval;
+
+                int around = Sweep.CountDamaged(hovered.transform.position, radius, hoveredWear);
+
+                // The piece under the cursor is vanilla's to repair and the sweep's trigger, so
+                // it is counted when it is damaged and named when it is not. Intact, the swing
+                // does nothing whatever is standing broken around it, and that is the one rule
+                // of this mod a player has to be told rather than shown.
+                bool intact = hoveredWear.GetHealthPercentage() >= 1f;
+                int total = around + (intact ? 0 : 1);
+
+                _countLine = total <= 0
+                    ? "Damaged in reach: none"
+                    : "Damaged in reach: " + total + (intact ? " (aim at a damaged piece)" : "");
+            }
+
+            if (string.IsNullOrEmpty(_countLine)) return;
+
+            label.text = string.IsNullOrEmpty(label.text) ? _countLine : label.text + "\n" + _countLine;
         }
 
         /// <summary>How long between reach-line refreshes, in seconds.</summary>

@@ -61,7 +61,7 @@ namespace Skaft
     {
         public const string PluginGuid = "ezomic.valheim.skaft";
         public const string PluginName = "Skaft";
-        public const string PluginVersion = "1.2.0";
+        public const string PluginVersion = "1.3.0";
         public const string PluginAuthor = "Robbin Thijssen";
 
         /// <summary>Core's plugin GUID. Optional - see TryRegisterWithCore.</summary>
@@ -159,7 +159,8 @@ namespace Skaft
             // Opting two back out. Both are display and diagnostics rather than balance, and a
             // host reaching across to turn off someone's build-menu line, or to switch on their
             // logging for the evening, is not a thing anybody asked for.
-            Suite.Local(SkaftConfig.ShowReachInBuildMenu, SkaftConfig.Verbose);
+            Suite.Local(SkaftConfig.ShowReachInBuildMenu, SkaftConfig.ShowDamagedInReach,
+                        SkaftConfig.Verbose);
         }
 
         private void OnDestroy()

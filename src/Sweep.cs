@@ -42,6 +42,14 @@ namespace Skaft
         private static readonly List<WearNTear> Candidates = new List<WearNTear>();
 
         /// <summary>
+        /// The same, for the hover count. Its own list rather than a shared one because the
+        /// count runs from the HUD while <see cref="Candidates"/> may still hold the last
+        /// swing's pieces, and a readout quietly emptying the swing's working set is the kind
+        /// of coupling that only shows up under a frame that does both.
+        /// </summary>
+        private static readonly List<WearNTear> Preview = new List<WearNTear>();
+
+        /// <summary>
         /// Held in a field rather than captured in a lambda so the sort does not allocate a new
         /// closure and delegate on every swing.
         /// </summary>
@@ -104,29 +112,11 @@ namespace Skaft
 
             if (!Bind()) return;
 
-            _center = hovered.transform.position;
-            float radiusSqr = radius * radius;
-
-            Candidates.Clear();
-            List<WearNTear> all = WearNTear.GetAllInstances();
-            for (int i = 0; i < all.Count; i++)
-            {
-                WearNTear wear = all[i];
-                if (wear == null || wear == hoveredWear) continue;
-                if ((wear.transform.position - _center).sqrMagnitude > radiusSqr) continue;
-
-                // Cheapest and most selective test there is, so it belongs here rather than
-                // after the sort and four component lookups. On a base that is standing, nearly
-                // everything in radius is intact, and this keeps the sort and every per-piece
-                // scan down to the pieces a swing could actually do something to. It is a cache
-                // rather than the authority, so the real check stays in the repair loop as well.
-                if (wear.GetHealthPercentage() >= 1f) continue;
-
-                Candidates.Add(wear);
-            }
+            Collect(Candidates, hovered.transform.position, radius, hoveredWear);
 
             // Nearest first. The wallet truncates the sweep, so the order decides which pieces
             // get fixed, and "the wall in front of me" is the only defensible answer to that.
+            // Collect left _center where the comparison needs it.
             Candidates.Sort(ByDistance);
 
             float cost = Mathf.Max(0f, SkaftConfig.CostMultiplier.Value);
@@ -167,11 +157,13 @@ namespace Skaft
                 WearNTear wear = Candidates[i];
                 if (wear == null) continue;
 
-                // s_allInstances carries WearNTear objects that are not build pieces at all -
-                // Ashlands altars, dvergr shelves. Vanilla's hammer can never target one:
-                // UpdateWearNTearHover resolves GetComponentInParent<Piece>(), so an object with
-                // no Piece never becomes m_hoveringPiece. Without this the mod silently heals
-                // dvergr ruins.
+                // Collect already refused anything without a Piece - s_allInstances carries
+                // WearNTear objects that are not build pieces at all, Ashlands altars and dvergr
+                // shelves, and vanilla's hammer can never target one, because
+                // UpdateWearNTearHover resolves GetComponentInParent<Piece>() and an object with
+                // no Piece never becomes m_hoveringPiece. This asks again because the checks
+                // below need the reference, and because a gate that reads as load-bearing here
+                // should not quietly depend on a caller two methods up.
                 if (!wear.TryGetComponent(out Piece piece)) continue;
 
                 ZNetView nview = wear.GetComponent<ZNetView>();
@@ -261,6 +253,72 @@ namespace Skaft
             player.Message(MessageHud.MessageType.TopLeft,
                 Localization.instance.Localize("$msg_repaired", hovered.m_name),
                 repaired + 1);
+        }
+
+        /// <summary>
+        /// Every damaged build piece within <paramref name="radius"/> of <paramref name="center"/>,
+        /// unordered, excluding <paramref name="skip"/>.
+        ///
+        /// One pass, two callers: the swing that repairs and the hover line that counts. They
+        /// have to agree - a readout built from its own copy of the rules would be a second
+        /// answer to the same question, and the first thing it would do is disagree with the
+        /// real one. Everything that can refuse a piece *after* this stays in the repair loop,
+        /// so the count is "damaged and in reach", never "will definitely be repaired": stamina,
+        /// hammer durability, wards and a missing station all still cut a swing short.
+        ///
+        /// Leaves <see cref="_center"/> set, which is what <see cref="ByDistance"/> sorts
+        /// against. Both callers are on the main thread and neither holds a sort across a call
+        /// to the other, so there is nothing to interleave.
+        /// </summary>
+        private static void Collect(List<WearNTear> into, Vector3 center, float radius, WearNTear skip)
+        {
+            _center = center;
+            float radiusSqr = radius * radius;
+
+            into.Clear();
+
+            List<WearNTear> all = WearNTear.GetAllInstances();
+            for (int i = 0; i < all.Count; i++)
+            {
+                WearNTear wear = all[i];
+                if (wear == null || wear == skip) continue;
+                if ((wear.transform.position - center).sqrMagnitude > radiusSqr) continue;
+
+                // Cheapest and most selective test there is, so it belongs here rather than
+                // after the sort and four component lookups. On a base that is standing, nearly
+                // everything in radius is intact, and this keeps the sort and every per-piece
+                // scan down to the pieces a swing could actually do something to. It is a cache
+                // rather than the authority, so the real check stays in the repair loop as well.
+                if (wear.GetHealthPercentage() >= 1f) continue;
+
+                // s_allInstances carries WearNTear objects that are not build pieces at all -
+                // Ashlands altars, dvergr shelves - and the hammer can never target one. The
+                // repair loop refuses them too; this is here as well so that the count a player
+                // reads off the crosshair is not inflated by ruins it will never touch.
+                if (!wear.TryGetComponent(out Piece _)) continue;
+
+                into.Add(wear);
+            }
+        }
+
+        /// <summary>
+        /// How many damaged pieces a swing at <paramref name="center"/> would find in reach,
+        /// not counting the piece under the cursor.
+        ///
+        /// Cleared before returning: this runs several times a second while a repair entry is
+        /// selected, and holding WearNTear references between frames means holding pieces
+        /// ZNetScene may have destroyed in the meantime.
+        /// </summary>
+        internal static int CountDamaged(Vector3 center, float radius, WearNTear skip)
+        {
+            if (radius <= 0f) return 0;
+
+            Collect(Preview, center, radius, skip);
+
+            int found = Preview.Count;
+            Preview.Clear();
+
+            return found;
         }
 
         /// <summary>
