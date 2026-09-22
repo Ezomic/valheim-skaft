@@ -16,9 +16,8 @@
 # mod: pick another one whose recipe names the workbench. It is a crude bow here because
 # vaettir-jib-gate already crafts that at a workbench, so the pairing is proven elsewhere.
 #
-# IT CHANGES YOUR CRAFTING SKILL and puts it back at the end (`skill Crafting back`).
-# If a run is stopped part way, the skill is left wherever that step set it - Devkit's
-# Skills pane sets it back.
+# It sets your Crafting skill and leaves it wherever the last step put it. That is fine on the
+# dev character these are run on; Devkit's Skills pane sets it back if it ever is not.
 #
 # Stand on flat ground with about eight metres clear in front of you, and NOT near a real
 # base - `wipe` takes down everything built within 14m, not only what this placed.
@@ -118,10 +117,6 @@ skill Crafting 25
 use piece_workbench
 repair
 worn 8
-
-# Hand the character back. This step is a cheat that overwrites real progress, so a scenario
-# that leaves Crafting at 25 has taken whatever the character had - see `skill ... back`.
-skill Crafting back
 
 # Shut the crafting panel `use` opened.
 close

@@ -26,9 +26,9 @@
 # is measured from the HOVERED PIECE, not from you - so from the middle wall the neighbours are
 # 2m away and the outer pair 4m, and at Crafting 60 all five are within the 8m reach.
 #
-# IT CHANGES YOUR CRAFTING SKILL and puts it back at the end (`skill Crafting back`).
-# If a run is stopped part way, the skill is left wherever that step set it - Devkit's
-# Skills pane sets it back.
+# It sets your Crafting skill and leaves it at 0, which is where the last claim needs it. That
+# is fine on the dev character these are run on; Devkit's Skills pane sets it back if it ever
+# is not - and at Crafting 0 this mod writes no crosshair line, which looks like a fault.
 #
 # Stand on flat ground with about eight metres clear in front of you, and NOT near a real base -
 # `wipe` takes down everything built within 14m, not only what this placed.
@@ -105,10 +105,5 @@ wait 1
 face woodwall
 wait 1
 crosshair nothing
-
-# Hand the character back. Without this the scenario ends having set Crafting to 0, which is
-# not a test fixture - it is the character's real skill, destroyed to prove the bottom of a
-# curve. It cost a real character 100 levels before the step existed.
-skill Crafting back
 
 close
