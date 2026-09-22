@@ -229,6 +229,13 @@ reach a neighbouring piece.
 stops at `DurabilityFloor` and at `MaxPieces`. Turn on `Verbose` and the log line says which of
 the four stopped it.
 
+**No line under the crosshair.** Four things have to be true and any one of them missing gives
+you nothing: the hammer is out with **Repair** selected rather than a build piece, the crosshair
+is actually on a piece (you will see its health bar), your Crafting is **above 0**, and
+`ShowDamagedInReach` is on. The third is the one that catches people. At Crafting 0 there is no
+reach, so there is no line - deliberately, because a character who has not earned it is not told
+about it - and that is indistinguishable from the mod being broken unless you know.
+
 **No reach line in the build menu.** Either `ShowReachInBuildMenu` is off, or the repair entry
 you selected is not named in `ReachEntries`. With `Verbose` on, the log names the entry that
 was actually selected, once per name.
@@ -258,10 +265,10 @@ The skill payout is vanilla's, and it showed itself without being asked: the sin
 Crafting 0 had taken Crafting to 1 by the next step of the scenario, which is `RepairOneItem`
 granting what it always granted and the mod adding nothing of its own.
 
-**The crosshair count has not been run at all.** It was added in 1.3.0 and is reasoned from
-the decompiled `Hud` and `WearNTear` - the health thresholds at which a piece starts to look
-damaged are read off `UpdateVisual`, and nothing has yet stood in a world and pointed at a wall
-with it on.
+**The crosshair count has been run too.** A scenario drove five walls through the four states
+the line has - nothing damaged, a whole piece with broken neighbours, a broken piece, no reach -
+aiming the camera and letting the game's own raycast find the piece rather than writing the
+hover by hand. Confirmed by eye at Crafting 50 on the same day.
 
 Not yet exercised: a dedicated server, a second player, another player's buildings, wards, and
 running out of stamina or hammer durability part-way through a swing. The ward argument is that

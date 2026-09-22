@@ -45,8 +45,19 @@ holds still.
 
 ### What has actually been run
 
-Nothing, in game. This builds and is reasoned from the decompiled `Hud` and `WearNTear`. The
-0.75 and 0.25 thresholds are read off `UpdateVisual`.
+All of it, on 22 September 2026. A Devkit scenario drove five walls in a row through the four
+states the line has - nothing damaged, a whole piece with broken neighbours, a broken piece, and
+no reach at all - and each one said what it should. The aim is the game's own: the scenario
+turns the camera and lets `UpdateWearNTearHover` raycast, rather than writing the hovered piece
+by hand, so the distance test and the highlight are exercised too.
+
+Then by eye, which is the half a scenario cannot judge: at Crafting 50 the line is there under
+the crosshair and reads correctly.
+
+**The first thing anyone will report is not a bug.** At Crafting 0 there is no line at all, and
+that is the design - a character who has not earned the reach is not told about it. It reads
+exactly like the feature being broken, which is why the troubleshooting section now says so
+before anybody has to ask. It caught the person who wrote it.
 
 ## 1.2.0 - 22 September 2026
 
