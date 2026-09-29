@@ -19,8 +19,9 @@
 # It sets your Crafting skill and leaves it wherever the last step put it. That is fine on the
 # dev character these are run on; Devkit's Skills pane sets it back if it ever is not.
 #
-# Stand on flat ground with about eight metres clear in front of you, and NOT near a real
-# base - `wipe` takes down everything built within 14m, not only what this placed.
+# The flat ground and the eight metres clear in front of you come from Devkit's stage before the
+# first step, which clears and levels 34m round you. Still NOT near a real base: that stage takes
+# down every piece within 34m, and `wipe` everything built within 14m, not only what this placed.
 
 clear
 give Wood:250
